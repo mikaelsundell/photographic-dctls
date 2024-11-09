@@ -24,10 +24,10 @@
     - [Utilities](#utilities)
       - [Stripify](#stripify)
       - [Saturation](#saturation)
-      - [Tonemapper](#tonemapper)
   - [Experimental DCTLs](#experimental-dctls)
       - [LogC3 temperature](#logc3-temperature)
       - [Grade](#grade)
+      - [Tonemapper](#tonemapper)
   - [DCTLs from other projects](#dctls-from-other-projects)
       - [Printer Lights](#printer-lights)
       - [TetraInterp](#tetrainterp)
@@ -184,12 +184,6 @@ HSV-based adjustments, this DCTL provides a tool for fine-tuning saturation usin
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Saturation.dctl
 
-#### Tonemapper
-
-Tone mapping adjustments using a shaped tone curve with toe, shoulder, and channel offset controls.
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Tonemapper.dctl
-
 ## Experimental DCTLs
 
 #### LogC3 temperature
@@ -203,6 +197,12 @@ LogC3 CAT02 color temperature adjustments.
 Grade adjustments, this DCTL is experimental code for lift, gamma, gain and log controls.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Grade.dctl
+
+#### Tonemapper
+
+Tone mapping adjustments using a shaped tone curve with toe, shoulder, and channel offset controls.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Tonemapper.dctl
 
 ## DCTLs from other projects
 
