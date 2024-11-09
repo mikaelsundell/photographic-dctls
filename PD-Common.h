@@ -20,7 +20,7 @@ struct Matrix
 
 // math
 __DEVICE__ float clamp_f(float value, float min, float max) {
-    return _clampf(value);
+    return _clampf(value, min, max);
 }
 
 __DEVICE__ float exp_f(float value) {
