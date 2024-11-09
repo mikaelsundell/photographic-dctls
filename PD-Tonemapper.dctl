@@ -6,12 +6,12 @@ DEFINE_UI_PARAMS(low, Low, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(low_r, Low R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(low_g, Low G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(low_b, Low B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(lowsoft, Low soft, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(lowsoft, Low soft, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(high, High, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(high_r, High R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(high_g, High G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(high_b, High B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(highsoft, High soft, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(highsoft, High soft, DCTLUI_SLIDER_FLOAT, 1.0, 1.0, 0.0, -0.01);
 DEFINE_UI_PARAMS(contrast, Contrast, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
 DEFINE_UI_PARAMS(pivot, Pivot, DCTLUI_SLIDER_FLOAT, 0.435, 0.0, 1.0, 0.01);
 
@@ -29,7 +29,7 @@ struct Tonemapper
     float toe;
 };
 
-__DEVICE__ struct Tonemapper tonemapper_xx() {
+__DEVICE__ struct Tonemapper tonemapper() {
     struct Tonemapper tm;
     tm.low = 0.300;
     tm.lowsoft = 0.200;
@@ -55,29 +55,33 @@ __DEVICE__ float tonecurve(float x, float p, float c) {
 
 __DEVICE__ float apply_tonemapper(float x, float low, float lowoffset, float lowsoft, float high, float highoffset, float highsoft, float contrast, float pivot)
 {
-    struct Tonemapper tm = tonemapper_xx();
+    struct Tonemapper tm = tonemapper();
+
+    x = clamp_f((x - pivot) * contrast + pivot, 0.0, 1.0);
+
     low = clamp_f(low - lowoffset, 0.0, 1.0);
-    high = high - highoffset;
+    high = clamp_f(high - highoffset, 0.0, 1.0);
     float shoulder = high * tm.shoulder;
     float toe = low * tm.toe;
     low = low * tm.low;
     lowsoft = lowsoft * tm.lowsoft;
     high = high * tm.high;
     highsoft = highsoft * tm.highsoft;
-    x = clamp_f((x - pivot) * contrast + pivot, 0.0, 1.0);
+
     float lowclip = low + lowsoft;
     if (x < lowclip) {
         float n = x / (lowclip);
         float c = 2.0 / (1.0 - toe) - 1.0;
-        return clamp_f(low + (tonecurve(n, 1, c) * lowsoft), 0.0, 1 - high);
+        x = clamp_f(low + (tonecurve(n, 1, c) * lowsoft), 0.0, lowclip);
     }
     float highclip = 1 - high - highsoft;
-    if (x > highclip) {
+    if (x > highclip && x < 1.0) { // < needed for correct values
         float n = (x - highclip) / (1 - highclip);
         float c = 2.0 / (1.0 - (shoulder)) - 1.0;
-        return clamp_f(highclip + (tonecurve(n, 0, c) * highsoft), 0.0, 1 - high);
+        x = clamp_f(highclip + (tonecurve(n, 0, c) * highsoft), highclip, 1.0);
     }
-    return clamp_f(x, 0.0, 1 - high);
+
+    return clamp_f(x, low, 1 - high);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
