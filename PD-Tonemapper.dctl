@@ -1,0 +1,92 @@
+// Copyright 2022-present Contributors to the dctl project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/mikaelsundell/dctl
+
+DEFINE_UI_PARAMS(low, Low, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(low_r, Low R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(low_g, Low G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(low_b, Low B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(lowsoft, Low soft, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high, High, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high_r, High R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high_g, High G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high_b, High B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(highsoft, High soft, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(contrast, Contrast, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
+DEFINE_UI_PARAMS(pivot, Pivot, DCTLUI_SLIDER_FLOAT, 0.435, 0.0, 1.0, 0.01);
+
+// headers
+#include "PD-Common.h"
+
+// logC3 curve
+struct Tonemapper
+{
+    float low;
+    float lowsoft;
+    float high;
+    float highsoft;
+    float shoulder;
+    float toe;
+};
+
+__DEVICE__ struct Tonemapper tonemapper_xx() {
+    struct Tonemapper tm;
+    tm.low = 0.300;
+    tm.lowsoft = 0.200;
+    tm.high = 0.350;
+    tm.highsoft = 0.200;
+    tm.shoulder = 0.5;
+    tm.toe = 0.4;
+    return tm;
+}
+
+__DEVICE__ float tonepow(float x, float c, float p) {
+   return pow(x, c) / pow(p, c - 1.0);
+}
+
+__DEVICE__ float tonecurve(float x, float p, float c) {
+   if (x < p) {
+       return tonepow(x, c, p);
+   } 
+   else {
+       return 1.0 - tonepow(1.0 - x, c, 1.0 - p);
+   }
+}
+
+__DEVICE__ float apply_tonemapper(float x, float low, float lowoffset, float lowsoft, float high, float highoffset, float highsoft, float contrast, float pivot)
+{
+    struct Tonemapper tm = tonemapper_xx();
+    low = clamp(low - lowoffset, 0.0, 1.0);
+    high = clamp(high - highoffset, 0.0, 1.0);
+    float shoulder = high * tm.shoulder;
+    float toe = low * tm.toe;
+    low = low * tm.low;
+    lowsoft = lowsoft * tm.lowsoft;
+    high = high * tm.high;
+    highsoft = highsoft * tm.highsoft;
+    x = clamp((x - pivot) * contrast + pivot, 0.0, 1.0);
+    float lowclip = low + lowsoft;
+    if (x < lowclip) {
+        float n = x / (lowclip);
+        float c = 2.0 / (1.0 - toe) - 1.0;
+        return clamp(low + (tonecurve(n, 1, c) * lowsoft), low, 1 - high);
+    }
+    float highclip = 1 - high - highsoft;
+    if (x > highclip) {
+        float n = (x - highclip) / (1 - highclip);
+        float c = 2.0 / (1.0 - (shoulder)) - 1.0;
+        return clamp(highclip + (tonecurve(n, 0, c) * highsoft), highclip, 1 - high);
+    }
+    return x;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    float r = p_R;
+    float g = p_G;
+    float b = p_B;
+    float rt = apply_tonemapper(r, low, low_r, lowsoft, high, high_r, highsoft, contrast, pivot);
+    float gt = apply_tonemapper(g, low, low_g, lowsoft, high, high_g, highsoft, contrast, pivot);
+    float bt = apply_tonemapper(b, low, low_b, lowsoft, high, high_b, highsoft, contrast, pivot);
+    return make_float3(rt, gt, bt);
+}

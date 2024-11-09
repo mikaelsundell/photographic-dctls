@@ -24,6 +24,7 @@
     - [Utilities](#utilities)
       - [Stripify](#stripify)
       - [Saturation](#saturation)
+      - [Tonemapper](#tonemapper)
   - [Experimental DCTLs](#experimental-dctls)
       - [LogC3 temperature](#logc3-temperature)
       - [Grade](#grade)
@@ -182,6 +183,12 @@ Matrix adjustments, this DCTL simplifies the color palette by pushing colors int
 HSV-based adjustments, this DCTL provides a tool for fine-tuning saturation using saturation in HSV.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Saturation.dctl
+
+#### Tonemapper
+
+Tone mapping adjustments using a shaped tone curve with toe, shoulder, and channel offset controls.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Tonemapper.dctl
 
 ## Experimental DCTLs
 
