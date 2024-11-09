@@ -19,6 +19,10 @@ struct Matrix
 };
 
 // math
+__DEVICE__ float clamp_f(float value, float min, float max) {
+    return _clampf(value);
+}
+
 __DEVICE__ float exp_f(float value) {
     return _expf(value);
 }
