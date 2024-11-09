@@ -14,6 +14,7 @@ DEFINE_UI_PARAMS(high_b, High B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(highsoft, High soft, DCTLUI_SLIDER_FLOAT, 1.0, 1.0, 0.0, -0.01);
 DEFINE_UI_PARAMS(contrast, Contrast, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
 DEFINE_UI_PARAMS(pivot, Pivot, DCTLUI_SLIDER_FLOAT, 0.435, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(showcurve, Show curve, DCTLUI_CHECK_BOX, 0)
 
 // headers
 #include "PD-Common.h"
@@ -56,9 +57,7 @@ __DEVICE__ float tonecurve(float x, float p, float c) {
 __DEVICE__ float apply_tonemapper(float x, float low, float lowoffset, float lowsoft, float high, float highoffset, float highsoft, float contrast, float pivot)
 {
     struct Tonemapper tm = tonemapper();
-
     x = clamp_f((x - pivot) * contrast + pivot, 0.0, 1.0);
-
     low = clamp_f(low - lowoffset, 0.0, 1.0);
     high = clamp_f(high - highoffset, 0.0, 1.0);
     float shoulder = high * tm.shoulder;
@@ -67,7 +66,6 @@ __DEVICE__ float apply_tonemapper(float x, float low, float lowoffset, float low
     lowsoft = lowsoft * tm.lowsoft;
     high = high * tm.high;
     highsoft = highsoft * tm.highsoft;
-
     float lowclip = low + lowsoft;
     if (x < lowclip) {
         float n = x / (lowclip);
@@ -80,17 +78,27 @@ __DEVICE__ float apply_tonemapper(float x, float low, float lowoffset, float low
         float c = 2.0 / (1.0 - (shoulder)) - 1.0;
         x = clamp_f(highclip + (tonecurve(n, 0, c) * highsoft), highclip, 1.0);
     }
-
     return clamp_f(x, low, 1 - high);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
-    float r = p_R;
-    float g = p_G;
-    float b = p_B;
-    float rt = apply_tonemapper(r, low, low_r, lowsoft, high, high_r, highsoft, contrast, pivot);
-    float gt = apply_tonemapper(g, low, low_g, lowsoft, high, high_g, highsoft, contrast, pivot);
-    float bt = apply_tonemapper(b, low, low_b, lowsoft, high, high_b, highsoft, contrast, pivot);
-    return make_float3(rt, gt, bt);
+    float3 rgb = make_float3(p_R, p_G, p_B);
+    rgb.x = apply_tonemapper(rgb.x, low, low_r, lowsoft, high, high_r, highsoft, contrast, pivot);
+    rgb.y = apply_tonemapper(rgb.y, low, low_g, lowsoft, high, high_g, highsoft, contrast, pivot);
+    rgb.z = apply_tonemapper(rgb.z, low, low_b, lowsoft, high, high_b, highsoft, contrast, pivot);
+    if (showcurve > 0) {
+        float x = float(p_X) / float(p_Width);
+        float value = apply_tonemapper(x, low, 0.0, lowsoft, high, high_r, highsoft, contrast, pivot);
+        int curveRow = (1.0f - value) * p_Height;
+        int lineThickness = 4;
+        if (p_Y >= curveRow - lineThickness / 2 && p_Y <= curveRow + lineThickness / 2) {
+            float3 white = make_float3(1.0, 1.0, 1.0); // White for the curve line
+            return white;
+        } else {
+            float3 fill = make_float3(0.5, 0.5, 0.5);
+            rgb = mix_f3(rgb, fill, 0.5);
+        }
+     }
+    return rgb;
 }
