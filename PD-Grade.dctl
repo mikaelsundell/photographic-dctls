@@ -24,6 +24,7 @@ DEFINE_UI_PARAMS(offset_b, Offset B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(gamma_r, Gamma R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(gamma_g, Gamma G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(gamma_b, Gamma B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 1)
 
 // headers
 #include "PD-Common.h"
@@ -75,5 +76,8 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     gr.gamma_scale = make_float2(-5.0, -0.8);
     gr.gamma = apply_scale(make_float3(gamma_r, gamma_g, gamma_b), gr.gamma_scale);
     float3 rgb = grade(make_float3(p_R, p_G, p_B), gr);
+    if (adjustdisplay) {
+        rgb = adjust_display(rgb);
+    }
     return rgb;
 }

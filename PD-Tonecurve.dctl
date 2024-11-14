@@ -16,6 +16,8 @@ DEFINE_UI_PARAMS(showcurve, Show curve, DCTLUI_CHECK_BOX, 0)
 
 // headers
 #include "PD-Common.h"
+#include "PD-DCIP3.h"
+#include "PD-Rec709.h"
 #include "PD-Tonemap.h"
 
 __DEVICE__ float tonecurve(struct TonemapCurve tc, float x, float low, float lowoffset, float lowsoft, float high, float highoffset, float highsoft, float contrast, float pivot)
