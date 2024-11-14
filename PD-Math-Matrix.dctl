@@ -1,0 +1,26 @@
+// Copyright 2022-present Contributors to the photographic-dctl project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/mikaelsundell/photographic-dctls
+
+// clang-format on
+DEFINE_UI_PARAMS(m1, M1, DCTLUI_VALUE_BOX, 1.0);
+DEFINE_UI_PARAMS(m2, M2, DCTLUI_VALUE_BOX, 0.0);
+DEFINE_UI_PARAMS(m3, M3, DCTLUI_VALUE_BOX, 0.0);
+DEFINE_UI_PARAMS(m4, M4, DCTLUI_VALUE_BOX, 0.0);
+DEFINE_UI_PARAMS(m5, M5, DCTLUI_VALUE_BOX, 1.0);
+DEFINE_UI_PARAMS(m6, M6, DCTLUI_VALUE_BOX, 0.0);
+DEFINE_UI_PARAMS(m7, M7, DCTLUI_VALUE_BOX, 0.0);
+DEFINE_UI_PARAMS(m8, M8, DCTLUI_VALUE_BOX, 0.0);
+DEFINE_UI_PARAMS(m9, M9, DCTLUI_VALUE_BOX, 1.0);
+
+// headers
+#include "PD-Common.h"
+
+// transform
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    float3 rgb = make_float3(p_R, p_G, p_B);
+    struct Matrix mat = { m1, m2, m3, m4, m5, m6, m7, m8, m9 };
+    float3 result = mult_matrix(rgb, mat);
+    return result;
+}

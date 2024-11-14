@@ -1,6 +1,6 @@
-// Copyright 2022-present Contributors to the dctl project.
+// Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/mikaelsundell/dctl
+// https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format on
 
@@ -14,12 +14,22 @@ struct Rec709Curve
     float offset;
 };
 
+__DEVICE__ struct Rec709Curve rec709_curve() {
+    struct Rec709Curve cv;
+    cv.threshold = 0.018;
+    cv.slope = 4.5;
+    cv.exp = 2.2;
+    cv.scale = 1.099;
+    cv.offset = 0.099;
+    return cv;
+}
+
 __DEVICE__ float Rec709Curve_lin_rec709(struct Rec709Curve cv, float lin) {
-    return (lin < cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, cv.exp) - cv.offset);
+    return (lin < cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, 1 / cv.exp) - cv.offset);
 }
 
 __DEVICE__ float Rec709Curve_rec709_lin(struct Rec709Curve cv, float val) {
-    return (val < Rec709Curve_lin_rec709(cv, cv.threshold)) ? (val / cv.slope) : pow_f((val + cv.offset) / cv.scale, 1.0 / cv.exp);
+    return (val < Rec709Curve_lin_rec709(cv, cv.threshold)) ? (val / cv.slope) : pow_f((val + cv.offset) / cv.scale, cv.exp);
 }
 
 // rec709 colorspace
@@ -29,26 +39,10 @@ struct Rec709Colorspace
     struct Matrix xyz_matrix;
 };
 
-__DEVICE__ float3 Rec709Colorspace_xyz_rec709(struct Rec709Colorspace cs, float3 xyz) {
-    return mult_matrix(xyz, cs.rec709_matrix);
-}
-__DEVICE__ float3 Rec709Colorspace_rec709_xyz(struct Rec709Colorspace cs, float3 rec709) {
-    return mult_matrix(rec709, cs.xyz_matrix);
-}
-
-__DEVICE__ struct Rec709Curve rec709_curve() {
-    struct Rec709Curve cv;
-    cv.threshold = 0.018;
-    cv.slope = 4.5;
-    cv.exp = 1.0 / 2.2;
-    cv.scale = 1.099;
-    cv.offset = 0.099;
-    return cv;
-}
-
 __DEVICE__ struct Rec709Colorspace rec709_colorspace() {
     struct Rec709Colorspace cs;
-     // rec709 matrix
+    // colortool --inputcolorspace Rec709 -v
+    // rec709 matrix
     cs.rec709_matrix.m00 = 3.2406; cs.rec709_matrix.m01 = -1.5372; cs.rec709_matrix.m02 = -0.4986;
     cs.rec709_matrix.m03 = -0.9689; cs.rec709_matrix.m04 = 1.8758; cs.rec709_matrix.m05 = 0.0415;
     cs.rec709_matrix.m06 = 0.0557; cs.rec709_matrix.m07 = -0.2040; cs.rec709_matrix.m08 = 1.0570;
@@ -57,6 +51,13 @@ __DEVICE__ struct Rec709Colorspace rec709_colorspace() {
     cs.xyz_matrix.m03 = 0.2126; cs.xyz_matrix.m04 = 0.7152; cs.xyz_matrix.m05 = 0.0722;
     cs.xyz_matrix.m06 = 0.0193; cs.xyz_matrix.m07 = 0.1192; cs.xyz_matrix.m08 = 0.9505;
     return cs;
+}
+
+__DEVICE__ float3 Rec709Colorspace_xyz_rec709(struct Rec709Colorspace cs, float3 xyz) {
+    return mult_matrix(xyz, cs.rec709_matrix);
+}
+__DEVICE__ float3 Rec709Colorspace_rec709_xyz(struct Rec709Colorspace cs, float3 rec709) {
+    return mult_matrix(rec709, cs.xyz_matrix);
 }
 
 // convert linear to rec709

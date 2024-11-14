@@ -1,6 +1,6 @@
-// Copyright 2024-present Contributors to the dctl project.
+// Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/mikaelsundell/dctl
+// https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format off
 DEFINE_UI_PARAMS(blackpoint_r, Black Point R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);

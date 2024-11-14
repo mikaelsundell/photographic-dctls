@@ -1,7 +1,7 @@
 #!/bin/bash
-##  Copyright 2022-present Contributors to the dctl project.
-##  SPDX-License-Identifier: BSD-3-Clause
-##  https://github.com/mikaelsundell/dctl
+## Copyright 2022-present Contributors to the photographic-dctl project.
+## SPDX-License-Identifier: BSD-3-Clause
+## https://github.com/mikaelsundell/photographic-dctls
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 dctl_dir="/Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/DCTL"

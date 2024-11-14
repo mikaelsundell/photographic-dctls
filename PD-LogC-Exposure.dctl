@@ -1,8 +1,9 @@
-// Copyright 2022-present Contributors to the dctl project.
+// Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/mikaelsundell/dctl
+// https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format off
+DEFINE_UI_PARAMS(logc, LogC, DCTLUI_COMBO_BOX, 0, {LOGC3, LOGC4}, {LogC3, LogC4})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(exposure, Exposure, DCTLUI_SLIDER_FLOAT, 0.0, -8.0, 8.0, 0.1)
 DEFINE_UI_PARAMS(ev, Exposure EV, DCTLUI_COMBO_BOX, 3, {EV_3, EV_2, EV_1, EV0, EV1, EV2, EV3}, {EV -3, EV -2, EV -1, EV 0, EV 1, EV 2, EV 3})
@@ -12,7 +13,7 @@ DEFINE_UI_PARAMS(showlegend, Show legend, DCTLUI_CHECK_BOX, 0)
 
 // headers
 #include "PD-Common.h"
-#include "PD-LogC3.h"
+#include "PD-LogC.h"
 
 // ev stops
 __DEVICE__ float evstops(int ev) {
@@ -35,20 +36,32 @@ __DEVICE__ float evstops(int ev) {
 }
 
 // logc3 color
-__DEVICE__ float3 logC3_color(float3 input_rgb, int ei, int ev) {
-    struct LogC3Curve cv = logC3_curve(ei);
-    struct LogC3Color colors[logC3_stops];
-    float evs = evstops(ev);
-    for (unsigned long i = 0; i < logC3_stops; i++) {
-        colors[i] = logC3_colors[i];
-        float lin = pow_f(2.0f, colors[i].stop + evs + 0.5f) * 0.18f;
-        float log = min_f(LogC3Curve_lin_logC3(cv, lin), 1.0f);
-        colors[i].stop = log;
+__DEVICE__ float3 logC_ev_color(float3 input_rgb, int ei, int ev, int logc) {
+    struct LogCColor colors[logC_stops];
+    if (logc == LOGC3) {
+        struct LogC3Curve cv = logC3_curve(ei);
+        float evs = evstops(ev);
+        for (unsigned long i = 0; i < logC_stops; i++) {
+            colors[i] = logC_colors[i];
+            float lin = pow_f(2.0f, colors[i].stop + evs + 0.5f) * 0.18f;
+            float log = min_f(LogC3Curve_lin_logC3(cv, lin), 1.0f);
+            colors[i].stop = log;
+        }
+    }
+    else {
+        struct LogC4Curve cv = logC4_curve();
+        float evs = evstops(ev);
+        for (unsigned long i = 0; i < logC_stops; i++) {
+            colors[i] = logC_colors[i];
+            float lin = pow_f(2.0f, colors[i].stop + evs + 0.5f) * 0.18f;
+            float log = min_f(LogC4Curve_lin_logC4(cv, lin), 1.0f);
+            colors[i].stop = log;
+        }
     }
     float3 result = make_float3(0.0f, 0.0f, 0.0f);
     float lum = luma_rec709(input_rgb);
-    for (unsigned long i = 0; i < logC3_stops; i++) {
-        if (lum <= colors[i].stop || i == (sizeof(logC3_colors) / sizeof(struct LogC3Color)) - 1) {
+    for (unsigned long i = 0; i < logC_stops; i++) {
+        if (lum <= colors[i].stop || i == (sizeof(logC_colors) / sizeof(struct LogCColor)) - 1) {
             result = make_float3(colors[i].r, colors[i].g, colors[i].b);
             break;
         }
@@ -60,9 +73,14 @@ __DEVICE__ float3 logC3_color(float3 input_rgb, int ei, int ev) {
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
-    rgb = lin_logC3(logC3_lin(rgb, ei) * pow_f(2.0, exposure), ei);
+    if (logc == LOGC3) {
+        rgb = lin_logC3(logC3_lin(rgb, ei) * pow_f(2.0, exposure), ei);
+    }
+    else {
+        rgb = lin_logC4(logC4_lin(rgb) * pow_f(2.0, exposure));
+    }
     if (showcolors > 0) {
-        rgb = logC3_color(rgb, ei, ev);
+        rgb = logC_ev_color(rgb, ei, ev, logc);
     }
     if (showlegend > 0) {
         int legendwidth = p_Width * 0.8;
@@ -72,10 +90,10 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
         int startX = p_Width * 0.1;
         int endX = startX + legendwidth;
         if (p_Y >= startY && p_Y < startY + barheight && p_X >= startX && p_X < endX) {
-            int width = legendwidth / logC3_stops;
+            int width = legendwidth / logC_stops;
             int index = (p_X - startX) / width;
-            if (index >= 0 && index < logC3_stops) {
-                return make_float3(logC3_colors[index].r, logC3_colors[index].g, logC3_colors[index].b);
+            if (index >= 0 && index < logC_stops) {
+                return make_float3(logC_colors[index].r, logC_colors[index].g, logC_colors[index].b);
             }
         }
     }

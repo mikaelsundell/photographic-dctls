@@ -16,22 +16,16 @@
       - [Cineon exposure](#cineon-exposure-1)
       - [Cineon transform](#cineon-transform)
     - [ARRI LogC color processing](#arri-logc-color-processing)
-      - [LogC3 exposure](#logc3-exposure)
-      - [LogC3 print](#logc3-print)
-      - [LogC3 transform](#logc3-transform)
-    - [Blackmagic color processing](#blackmagic-color-processing)
-      - [Gen5 transform](#gen5-transform)
+      - [LogC exposure](#logc-exposure)
+      - [LogC print](#logc-print)
     - [Utilities](#utilities)
       - [Stripify](#stripify)
       - [Saturation](#saturation)
+      - [Tonecurve](#tonecurve)
+      - [Transform](#transform)
   - [Experimental DCTLs](#experimental-dctls)
       - [LogC3 temperature](#logc3-temperature)
       - [Grade](#grade)
-      - [Tonemapper](#tonemapper)
-  - [DCTLs from other projects](#dctls-from-other-projects)
-      - [Printer Lights](#printer-lights)
-      - [TetraInterp](#tetrainterp)
-      - [TetraInterpHSV](#tetrainterphsv)
   - [Reference charts](#reference-charts)
       - [ACES Macbeth 50D 5203 EXR from rawtoaces](#aces-macbeth-50d-5203-exr-from-rawtoaces)
       - [ARRI LogC3 stepchart - EXR 2K LogC3 encoding](#arri-logc3-stepchart---exr-2k-logc3-encoding)
@@ -44,7 +38,7 @@ Introduction
 
 <img src="resources/dctl.jpg" width="100%" style="padding-bottom: 20px;" />
 
-This is a growing collection of DCTLs (DaVinci Color Transform Language) created to understand workflows with ARRI LogC3, Gen5 and Cineon in DaVinci Resolve. These DCTLs take a photographic approach to color correction and grading from log and film negatives, focusing on look adjustments and traditional print techniques rather than rigid technical processes. The project is continually updated to implement new insights and techniques.
+This collection of DCTL scripts is all about exploring and learning the math behind color science like ARRI LogC3, LogC4, ACES AP0, Gen5, and Cineon. It's a creative, photographic-inspired approach to color correction and grading, with a focus on look adjustments and classic print techniques rather than just sticking to technical workflows. The project is a work in progress, so new ideas and techniques will keep popping up. Some concepts are a bit experimental and may overlap with Resolve's built-in tools, and file names or structures might change along the way.
   
 Installation and utils
 ---------
@@ -140,7 +134,7 @@ Cineon conversion to and from linear.
 
 ### ARRI LogC color processing
 
-#### LogC3 exposure
+#### LogC exposure
 
 ![PD-LogC3-Exposure.dctl figure](resources/PD-LogC3-Exposure.png "PD-LogC3-Exposure.dctl")
 
@@ -148,27 +142,13 @@ LogC3 exposure from photographic stops, incorporating a zone based false color t
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Exposure.dctl
 
-#### LogC3 print
+#### LogC print
 
 ![PD-LogC3-Print.dctl figure](resources/PD-LogC3-Print.png "PD-LogC3-Print.dctl")
 
 Made for print emulation, this DCTL applies DaVinci Resolve's built-in film looks to ARRI LogC3 and Cineon footage with adjustable controls for luminosity and color blending.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Print.dctl
-
-#### LogC3 transform
-
-LogC3 conversion to and from linear. 
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Transform.dctl
-
-### Blackmagic color processing
-
-#### Gen5 transform
-
-Blackmagic Gen5 conversion to and from linear. 
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Gen5-Transform.dctl
 
 ### Utilities
 
@@ -184,6 +164,18 @@ HSV-based adjustments, this DCTL provides a tool for fine-tuning saturation usin
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Saturation.dctl
 
+#### Tonecurve
+
+Tone curve adjustments for contrast, shoulder and toe controls.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Tonecurve.dctl
+
+#### Transform
+
+Color space transformation to and from CIE XYZ linear.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Transform.dctl
+
 ## Experimental DCTLs
 
 #### LogC3 temperature
@@ -197,26 +189,6 @@ LogC3 CAT02 color temperature adjustments.
 Grade adjustments, this DCTL is experimental code for lift, gamma, gain and log controls.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Grade.dctl
-
-#### Tonemapper
-
-Tone mapping adjustments using a shaped tone curve with toe, shoulder, and channel offset controls.
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Tonemapper.dctl
-
-## DCTLs from other projects
-
-#### Printer Lights
-
-- https://github.com/thatcherfreeman/utility-dctls/blob/main/Utilities/Printer%20Lights.dctl
-
-#### TetraInterp
-
--  https://github.com/hotgluebanjo/TetraInterp-DCTL/blob/master/TetraInterp.dctl
-
-#### TetraInterpHSV
-
-- https://github.com/hotgluebanjo/TetraInterp-DCTL/blob/master/TetraInterpHSV.dctl
 
 ## Reference charts
 
@@ -246,32 +218,32 @@ Reference charts for testing and verifying DCTLs. Additional formats are availab
 References
 ---------
 
-**ARRI Companion to DI**
-* https://dicomp.arri.de/digital/digital_systems/DIcompanion/index.html
+**Github projects**
+* https://github.com/mikaelsundell/colortool
+* https://github.com/mikaelsundell/logctool
   
-**Grayscale legacy luma**
-* https://en.wikipedia.org/wiki/Grayscale
-
-**Tonal curves in Desmos graph calculator**
-* https://www.desmos.com/calculator
-* https://www.desmos.com/calculator/3zhzwbfrxd
-
-**Matrix calculator**
-* https://www.russellcottrell.com/photo/matrixCalculator.htm
-
 **Wikipedia**
 * https://en.wikipedia.org/wiki/Rec._709
 * https://en.wikipedia.org/wiki/DCI-P3
+* https://en.wikipedia.org/wiki/Grayscale
 
-**Digital cinema initiatives, LLC**
+**Format specifications**
 * http://www.dcimovies.com/archives/spec_v1_1/DCI_DCinema_System_Spec_v1_1.pdf
+* https://docs.acescentral.com/specifications/acescc/#color-space
+* https://www.arri.com/resource/blob/278790/dc29f7399c1dc9553d329e27f1409a89/2022-05-arri-logc4-specification-data.pdf
+* https://dicomp.arri.de/digital/digital_systems/DIcompanion/index.html
 
-**Formats in RV**
-* https://github.com/AcademySoftwareFoundation/OpenRV/blob/main/src/plugins/rv-packages/additional_nodes/LinearToCineonLog.glsl
-* https://github.com/AcademySoftwareFoundation/OpenRV/blob/main/src/plugins/rv-packages/additional_nodes/CineonLogToLinear.glsl
-
-**Blend modes**
+**Implementations**
+* https://github.com/thatcherfreeman/utility-dctls
+* https://github.com/AcademySoftwareFoundation/OpenRV/blob/main/src/plugins/rv-packages/additional_nodes
 * https://skia.googlesource.com/skia/+/70e432e72745/gm/hsl.cpp
+* https://colour.readthedocs.io/
+* https://github.com/ampas/aces-dev
+
+**Utilities**
+* https://www.desmos.com/calculator
+* https://www.desmos.com/calculator/3zhzwbfrxd
+* https://www.russellcottrell.com/photo/matrixCalculator.htm
 
  Web Resources
 -------------

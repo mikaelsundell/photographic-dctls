@@ -1,0 +1,91 @@
+// Copyright 2022-present Contributors to the photographic-dctl project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/mikaelsundell/photographic-dctls
+
+DEFINE_UI_PARAMS(low, Low, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(low_r, Low R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(low_g, Low G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(low_b, Low B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high, High, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high_r, High R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high_g, High G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(high_b, High B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(contrast, Contrast, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
+DEFINE_UI_PARAMS(pivot, Pivot, DCTLUI_SLIDER_FLOAT, 0.435, 0.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(showcurve, Show curve, DCTLUI_CHECK_BOX, 0)
+
+// headers
+#include "PD-Common.h"
+#include "PD-Tonemap.h"
+
+__DEVICE__ float tonecurve(struct TonemapCurve tc, float x, float low, float lowoffset, float lowsoft, float high, float highoffset, float highsoft, float contrast, float pivot)
+{
+    low = clamp_f(low - lowoffset, 0.0, 1.0);
+    high = clamp_f(high - highoffset * -1, 0.0, 1.0);
+    float shoulder = high * tc.shoulder;
+    float toe = low * tc.toe;
+    low = low * tc.low;
+    lowsoft = lowsoft * tc.lowsoft;
+    high = high * tc.high;
+    highsoft = highsoft * tc.highsoft;
+    x = clamp_f((x - pivot) * contrast + pivot, 0.0, 1 - 1e-5);
+    float lowclip = low + lowsoft;
+    if (x < lowclip) {
+        float n = x / (lowclip);
+        float c = 2.0 / (1.0 - toe) - 1.0;
+        return clamp_f(low + (tonemap_scurve(n, 1, c) * lowsoft), low, 1 - high);
+    }
+    float highclip = 1 - high - highsoft;
+    if (x > highclip) {
+        float n = (x - highclip) / (1 - highclip);
+        float c = 2.0 / (1.0 - (shoulder)) - 1.0;
+        return clamp_f(highclip + (tonemap_scurve(n, 0, c) * highsoft), highclip, 1.0);
+    }
+    return x;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    struct TonemapCurve tc = tonemap_curve();
+    float3 rgb = make_float3(p_R, p_G, p_B);
+    float lowsoft = 1.0;
+    float highsoft = 1.0;
+    rgb.x = tonecurve(tc, rgb.x, low, low_r, lowsoft, high, high_r, highsoft, contrast, pivot);
+    rgb.y = tonecurve(tc, rgb.y, low, low_g, lowsoft, high, high_g, highsoft, contrast, pivot);
+    rgb.z = tonecurve(tc, rgb.z, low, low_b, lowsoft, high, high_b, highsoft, contrast, pivot);
+    if (showcurve > 0) {
+        float x = float(p_X) / float(p_Width);
+        int thickness = 4;
+        float3 color = make_float3(0.0, 0.0, 0.0);
+        float r = tonecurve(tc, x, low, low_r, lowsoft, high, high_r, highsoft, contrast, pivot);
+        int row = (1.0f - r) * p_Height;
+        if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
+            color = make_float3(1.0, 0.0, 0.0);
+        }
+        float g = tonecurve(tc, x, low, low_g, lowsoft, high, high_g, highsoft, contrast, pivot);
+        row = (1.0f - g) * p_Height;
+        if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
+            color = make_float3(+.0, 1.0, 0.0);
+        }
+        float b = tonecurve(tc, x, low, low_b, lowsoft, high, high_b, highsoft, contrast, pivot);
+        row = (1.0f - b) * p_Height;
+        if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
+            color = make_float3(0.0, 0.0, 1.0);
+        }
+        float l = tonecurve(tc, x, low, 0.0, lowsoft, high, 0.0, highsoft, contrast, pivot);
+        row = (1.0f - l) * p_Height;
+        thickness = 6;
+        if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
+            color = make_float3(1.0, 1.0, 1.0);
+        }
+        if (color.x > 0.0 || color.y > 0.0 || color.z > 0.0) {
+            return color;
+        }
+        else {
+            float3 fill = make_float3(0.5, 0.5, 0.5);
+            rgb = mix_f3(rgb, fill, 0.5);
+            return rgb;
+        }
+    }
+    return rgb;
+}

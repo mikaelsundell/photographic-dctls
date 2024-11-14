@@ -1,6 +1,6 @@
-// Copyright 2024-present Contributors to the dctl project.
+// Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/mikaelsundell/dctl
+// https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format off
 DEFINE_UI_PARAMS(stripify, Stripify, DCTLUI_SLIDER_FLOAT, 0, 0, 100, 1);

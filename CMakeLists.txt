@@ -1,9 +1,9 @@
-# Copyright 2022-present Contributors to the colorpalette project.
+# Copyright 2022-present Contributors to the photographic-dctl project.
 # SPDX-License-Identifier: BSD-3-Clause
-# https://github.com/mikaelsundell/colorpalette
+# https://github.com/mikaelsundell/photographic-dctls
 
 cmake_minimum_required(VERSION 3.27)
-set( project_name "dctl" )
+set( project_name "photographic-dctls" )
 
 project( "${project_name} project" )
 

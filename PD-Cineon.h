@@ -1,6 +1,6 @@
-// Copyright 2022-present Contributors to the dctl project.
+// Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/mikaelsundell/dctl
+// https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format on
 
@@ -44,6 +44,12 @@ struct CineonCurve
     int white;
 };
 
+__DEVICE__ struct CineonCurve cineon_curve() {
+    struct CineonCurve cv;
+    cv.density = 2.046; cv.gamma = 0.6; cv.bitdepth = 1023; cv.offset = 95; cv.white = 685;
+    return cv;
+}
+
 __DEVICE__  float CineonCurve_steps(struct CineonCurve cv) {
     return (cv.density / cv.bitdepth);
 }
@@ -85,12 +91,6 @@ __DEVICE__ float3 CineonCurve_cineon_lin(struct CineonCurve cv, float3 rgb) {
     float b = pow_f(10.0f, rgb.z * scale);
     rgb = (make_float3(r, g, b) - black) / diff;
     return rgb;
-}
-
-__DEVICE__ struct CineonCurve cineon_curve() {
-    struct CineonCurve cv;
-    cv.density = 2.046; cv.gamma = 0.6; cv.bitdepth = 1023; cv.offset = 95; cv.white = 685;
-    return cv;
 }
 
 // invert negative to cineon

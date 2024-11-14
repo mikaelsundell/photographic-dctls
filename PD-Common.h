@@ -1,6 +1,6 @@
-// Copyright 2022-present Contributors to the dctl project.
+// Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/mikaelsundell/dctl
+// https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format on
 
@@ -19,12 +19,16 @@ struct Matrix
 };
 
 // math
-__DEVICE__ float clamp_f(float value, float min, float max) {
-    return _clampf(value, min, max);
-}
-
 __DEVICE__ float exp_f(float value) {
     return _expf(value);
+}
+
+__DEVICE__ float3 exp_f3(float3 value) {
+    return make_float3(exp_f(value.x), exp_f(value.y), exp_f(value.z));
+}
+
+__DEVICE__ float exp2_f(float value) {
+    return _exp2f(value);
 }
 
 __DEVICE__ float mod_f(float value, float y) {
@@ -39,12 +43,28 @@ __DEVICE__ float3 abs_f3(float3 value) {
     return make_float3(abs_f(value.x), abs_f(value.y), abs_f(value.z));
 }
 
+__DEVICE__ float clamp_f(float value, float min, float max) {
+    return _clampf(value, min, max);
+}
+
+__DEVICE__ float3 clamp_f3(float3 value, float min, float max) {
+    return make_float3(clamp_f(value.x, min, max), clamp_f(value.y, min, max), clamp_f(value.z, min, max));
+}
+
 __DEVICE__ float log_f(float value) {
     return _logf(value);
 }
 
 __DEVICE__ float3 log_f3(float3 value) {
     return make_float3(log_f(value.x), log_f(value.y), log_f(value.z));
+}
+
+__DEVICE__ float log2_f(float value) {
+    return _log2f(value);
+}
+
+__DEVICE__ float3 log2_f3(float3 value) {
+    return make_float3(log2_f(value.x), log2_f(value.y), log2_f(value.z));
 }
 
 __DEVICE__ float log10_f(float value) {
@@ -101,7 +121,7 @@ __DEVICE__ float3 div_3f(float3 x, float3 y) {
     return x / ey;
 }
 
-// Matrix math
+// matrix math
 __DEVICE__ float3 mult_matrix(float3 value, struct Matrix mat) {
     float3 result = make_float3(
         mat.m00 * value.x + mat.m01 * value.y + mat.m02 * value.z,
@@ -111,7 +131,55 @@ __DEVICE__ float3 mult_matrix(float3 value, struct Matrix mat) {
     return result;
 }
 
-// Convert hsv to rgb
+// convert to luma in rec601
+__DEVICE__ float luma_rec601(float3 rgb)
+{
+    float luma = 0.299f * rgb.x + 0.587f * rgb.y + 0.114f * rgb.z;
+    return luma;
+}
+
+// convert to luma in rec709
+__DEVICE__ float luma_rec709(float3 rgb)
+{
+    float luma = 0.2126f * rgb.x + 0.7152f * rgb.y + 0.0722f * rgb.z;
+    return luma;
+}
+
+// convert to luma in rec2100
+__DEVICE__ float luma_rec2100(float3 rgb)
+{
+    float luma = 0.2627f * rgb.x + 0.6780f * rgb.y + 0.0593f * rgb.z;
+    return luma;
+}
+
+// adjust to luma in rec601
+__DEVICE__ float3 adjust_luma_rec601(float3 rgb, float l)
+{
+    float diff = l - luma_rec601(rgb);
+    float3 result = make_float3(rgb.x + diff, rgb.y + diff, rgb.z + diff);
+    return result;
+}
+
+// adjust to luma in rec709
+__DEVICE__ float3 adjust_luma_rec709(float3 rgb, float l)
+{
+    float diff = l - luma_rec709(rgb);
+    float3 result = make_float3(rgb.x + diff, rgb.y + diff, rgb.z + diff);
+    return result;
+}
+
+// adjust reinhard
+__DEVICE__ float3 adjust_reinhard(float3 linear, float exposure) {
+    return linear / (1.0 + linear * exposure);
+}
+
+// adjust for display
+__DEVICE__ float3 adjust_display(float3 rgb)
+{
+    return clamp_f3(rgb, 0.0, 1.0);
+}
+
+// convert hsv to rgb
 __DEVICE__ float3 hsv_rgb(float3 hsv) {
     float hue = hsv.x;
     float sat = hsv.y;
@@ -142,7 +210,7 @@ __DEVICE__ float3 hsv_rgb(float3 hsv) {
     return rgbp + m;
 }
 
-// Convert rgb to hsv
+// convert rgb to hsv
 __DEVICE__ float3 rgb_hsv(float3 rgb) {
     float r = rgb.x;
     float g = rgb.y;
@@ -175,7 +243,7 @@ __DEVICE__ float3 rgb_hsv(float3 rgb) {
     return color;
 }
 
-// Convert hsl to rgb
+// convert hsl to rgb
 __DEVICE__ float3 hsl_rgb(float3 hsl) {
     float h = hsl.x / 360.0f; // Convert h to [0, 1] range
     float s = hsl.y;
@@ -206,7 +274,7 @@ __DEVICE__ float3 hsl_rgb(float3 hsl) {
     return rgb;
 }
 
-// Convert rgb to hsl
+// convert rgb to hsl
 __DEVICE__ float3 rgb_hsl(float3 rgb) {
     float r = rgb.x;
     float g = rgb.y;
@@ -231,47 +299,4 @@ __DEVICE__ float3 rgb_hsl(float3 rgb) {
         h /= 6.0f;
     }
     return make_float3(h * 360.0f, s, l); // H in [0, 360], S and L in [0, 1]
-}
-
-// Convert to luma in rec601
-__DEVICE__ float luma_rec601(float3 rgb)
-{
-    float luma = 0.299f * rgb.x + 0.587f * rgb.y + 0.114f * rgb.z;
-    return luma;
-}
-
-// Convert to luma in rec709
-__DEVICE__ float luma_rec709(float3 rgb)
-{
-    float luma = 0.2126f * rgb.x + 0.7152f * rgb.y + 0.0722f * rgb.z;
-    return luma;
-}
-
-// Convert to luma in rec2100
-__DEVICE__ float luma_rec2100(float3 rgb)
-{
-    float luma = 0.2627f * rgb.x + 0.6780f * rgb.y + 0.0593f * rgb.z;
-    return luma;
-}
-
-// Adjust to luma in rec601
-__DEVICE__ float3 adjust_luma_rec601(float3 rgb, float l)
-{
-    float diff = l - luma_rec601(rgb);
-    float3 result = make_float3(rgb.x + diff, rgb.y + diff, rgb.z + diff);
-    return result;
-}
-
-// Adjust to luma in rec709
-__DEVICE__ float3 adjust_luma_rec709(float3 rgb, float l)
-{
-    float diff = l - luma_rec709(rgb);
-    float3 result = make_float3(rgb.x + diff, rgb.y + diff, rgb.z + diff);
-    return result;
-}
-
-// Adjust for display
-__DEVICE__ float3 adjust_display(float3 rgb)
-{
-    return max_f3(rgb, 0.0f);
 }

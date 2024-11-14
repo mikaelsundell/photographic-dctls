@@ -1,6 +1,6 @@
-// Copyright 2022-present Contributors to the colorpicker project.
+// Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
-// https://github.com/mikaelsundell/dctl
+// https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format on
 DEFINE_UI_PARAMS(transform, Transform, DCTLUI_COMBO_BOX, 0, {LINCINEON, CINEONLIN}, {Convert linear to Cineon, Convert Cineon to Linear})
