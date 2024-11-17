@@ -9,4 +9,4 @@ project( "${project_name} project" )
 
 file(GLOB dctl "*.dctl")
 file(GLOB headers "*.h")
-install(FILES ${dctl} DESTINATION dctl headers)
+install(FILES ${dctl} ${headers} DESTINATION dctl)
