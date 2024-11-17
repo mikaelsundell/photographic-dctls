@@ -8,4 +8,5 @@ set( project_name "photographic-dctls" )
 project( "${project_name} project" )
 
 file(GLOB dctl "*.dctl")
-install(FILES ${dctl} DESTINATION dctl)
+file(GLOB headers "*.h")
+install(FILES ${dctl} DESTINATION dctl headers)
