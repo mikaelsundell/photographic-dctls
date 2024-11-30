@@ -81,13 +81,13 @@ __DEVICE__ float3 DCIP3Colorspace_dcip3_xyz(struct DCIP3Colorspace cs, float3 dc
 }
 
 // convert linear to dcip3
-__DEVICE__ float3 lin_dcip3(float3 rgb) {
+__DEVICE__ float3 lin_dcip3gamma26(float3 rgb) {
     struct DCIP3Curve cv = dcip3_curve();
     return make_float3(DCIP3Curve_lin_dcip3(cv, rgb.x), DCIP3Curve_lin_dcip3(cv, rgb.y), DCIP3Curve_lin_dcip3(cv, rgb.z));
 }
 
 // convert dcip3 to linear
-__DEVICE__ float3 dcip3_lin(float3 rgb) {
+__DEVICE__ float3 dcip3gamma26_lin(float3 rgb) {
     struct DCIP3Curve cv = dcip3_curve();
     return make_float3(DCIP3Curve_dcip3_lin(cv, rgb.x), DCIP3Curve_dcip3_lin(cv, rgb.y), DCIP3Curve_dcip3_lin(cv, rgb.z));
 }

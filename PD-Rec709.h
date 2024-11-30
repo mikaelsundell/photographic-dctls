@@ -60,14 +60,14 @@ __DEVICE__ float3 Rec709Colorspace_rec709_xyz(struct Rec709Colorspace cs, float3
     return mult_matrix(rec709, cs.xyz_matrix);
 }
 
-// convert linear to rec709
-__DEVICE__ float3 lin_rec709(float3 rgb) {
+// convert linear to rec709 gamma ~2.4
+__DEVICE__ float3 lin_rec709gamma24(float3 rgb) {
     struct Rec709Curve cv = rec709_curve();
     return make_float3(Rec709Curve_lin_rec709(cv, rgb.x), Rec709Curve_lin_rec709(cv, rgb.y), Rec709Curve_lin_rec709(cv, rgb.z));
 }
 
-// convert rec709 to linear
-__DEVICE__ float3 rec709_lin(float3 rgb) {
+// convert rec709 gamma ~2.4 to linear
+__DEVICE__ float3 rec709gamma24_lin(float3 rgb) {
     struct Rec709Curve cv = rec709_curve();
     return make_float3(Rec709Curve_rec709_lin(cv, rgb.x), Rec709Curve_rec709_lin(cv, rgb.y), Rec709Curve_rec709_lin(cv, rgb.z));
 }    

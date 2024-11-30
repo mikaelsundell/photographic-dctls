@@ -233,12 +233,13 @@ References
 * https://www.arri.com/resource/blob/278790/dc29f7399c1dc9553d329e27f1409a89/2022-05-arri-logc4-specification-data.pdf
 * https://dicomp.arri.de/digital/digital_systems/DIcompanion/index.html
 
-**Implementations**
+**DCTLs, apps and resources**
 * https://github.com/thatcherfreeman/utility-dctls
 * https://github.com/AcademySoftwareFoundation/OpenRV/blob/main/src/plugins/rv-packages/additional_nodes
 * https://skia.googlesource.com/skia/+/70e432e72745/gm/hsl.cpp
-* https://colour.readthedocs.io/
+* https://colour.readthedocs.io
 * https://github.com/ampas/aces-dev
+* https://mononodes.com
 
 **Utilities**
 * https://www.desmos.com/calculator

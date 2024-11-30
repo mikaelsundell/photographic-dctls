@@ -3,23 +3,27 @@
 // https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format on
-DEFINE_UI_PARAMS(inputtransform, Input transform, DCTLUI_COMBO_BOX, 0, {INXYZ, INACESAP0, INACESAP0CC, INACESAP0CCT, INLOGC3, INLOGC4, INREC709, INDCIP3D60, INDCIP3, INDCIP3D65, INGEN5}, {CIE XYZ/Lin, AcesAP0 D60/Lin, AcesAP0 D60/Acescc, AcesAP0 D60/Acescct, AWG3 D65/LogC3, AWG4 D65/LogC4, Rec709 D65/Gamma2.2, DCI-P3 'D60 sim' D60/Gamma2.6, DCI-P3 Theatrical D63/Gamma2.6, DCI-P3 D65/Gamma2.6, Blackmagic Gen5 D65/Film})
-DEFINE_UI_PARAMS(outputtransform, Output transform, DCTLUI_COMBO_BOX, 0,{OUTXYZ, OUTACESAP0, OUTACESAP0CC, OUTACESAP0CCT, OUTLOGC3, OUTLOGC4, OUTREC709, OUTDCIP3D60, OUTDCIP3, OUTDCIP3D65, OUTGEN5}, {CIE XYZ/Lin, AcesAP0 D60/Lin, AcesAP0 D60/Acescc, AcesAP0 D60/Acescct, AWG3 D65/LogC3, AWG4 D65/LogC4, Rec709 D65/Gamma2.2, DCI-P3 'D60 sim' D60/Gamma2.6, DCI-P3 Theatrical D63/Gamma2.6, DCI-P3 D65/Gamma2.6, Blackmagic Gen5 D65/Film})
+DEFINE_UI_PARAMS(inputcolorspace, Input colorspace, DCTLUI_COMBO_BOX, 0, {INXYZ, INACESAP0, INACESAP1, INAWGC3, INAWGC4, INREC709, INSRGB, INDCIP3D60, INDCIP3, INDCIP3D65, INGEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
+DEFINE_UI_PARAMS(inputgamma, Input gamma, DCTLUI_COMBO_BOX, 0, {INLIN, INACESCC, INACESCCT, INLOGC3, INLOGC4, INCINEON, INGAMMA22, INGAMMA24, INGAMMA26, INFILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, sRGB/Gamma2.2, Rec709/Gamma2.4, DCI-P3/Gamma2.6, Blackmagic Film})
+DEFINE_UI_PARAMS(outputcolorspace, Output colorspace, DCTLUI_COMBO_BOX, 0, {OUTXYZ, OUTACESAP0, OUTACESAP1, OUTAWGC3, OUTAWGC4, OUTREC709, OUTSRGB, OUTDCIP3D60, OUTDCIP3, OUTDCIP3D65, OUTGEN5}, {CIE XYZ, AcesAP0 D60, AcesAP0 D60, ARRI AWG3 D65, ARRI AWG4 D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
+DEFINE_UI_PARAMS(outputgamma, Output gamma, DCTLUI_COMBO_BOX, 0, {OUTLIN, OUTACESCC, OUTACESCCT, OUTLOGC3, OUTLOGC4, OUTCINEON, OUTGAMMA22, OUTGAMMA24, OUTGAMMA26, OUTFILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, sRGB/Gamma2.2, Rec709/Gamma2.4, DCI-P3/Gamma2.6, Blackmagic Film})
 DEFINE_UI_PARAMS(whitepoint, Whitepoint adaptation, DCTLUI_COMBO_BOX, 0, {WPNONE, WPD60D65, WPD63D65, WPD65D60, WPD65D63}, {None, D60 to D65, D63 to D65, D65 to D60, D65 to D63})
 DEFINE_UI_PARAMS(tonecompress, Tone compress, DCTLUI_COMBO_BOX, 0, {TCNONE, TCREINHARD, TCINVERSEREINHARD}, {None, Reinhard, Inverse Reinhard})
-DEFINE_UI_PARAMS(toneootf, Tone OOTF, DCTLUI_COMBO_BOX, 0, {OOTFNONE, OFDCIP3REC709, OFREC709DCIP3}, {None, DCI-P3 to Rec709, Rec709 to DCI-P3})
+DEFINE_UI_PARAMS(toneootf, Tone OOTF, DCTLUI_COMBO_BOX, 0, {OOTFNONE, OFDCIP3REC709, OFSRGBREC709, OFREC709DCIP3}, {None, DCI-P3 to Rec709, sRGB to Rec709, Rec709 to DCI-P3})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(mapcolorspace, Map colorspace, DCTLUI_CHECK_BOX, 1)
 DEFINE_UI_PARAMS(mapgamma, Map gamma, DCTLUI_CHECK_BOX, 1)
-DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 1)
+DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 
 // headers
 #include "PD-Common.h"
 #include "PD-Aces.h"
+#include "PD-Cineon.h"
 #include "PD-DCIP3.h"
 #include "PD-Gen5.h"
 #include "PD-LogC.h"
 #include "PD-Rec709.h"
+#include "PD-sRGB.h"
 #include "PD-Tonemap.h"
 #include "PD-Whitepoint.h"
 
@@ -27,17 +31,15 @@ DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 1)
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
+
     // input transform
     if (mapgamma) {
-        switch (inputtransform) {
-            case INACESAP0:
-                rgb = acesAP0_lin(rgb);
+        switch (inputgamma) {
+            case INACESCC:
+                rgb = acescc_lin(rgb);
                 break;
-            case INACESAP0CC:
-                rgb = acesAP0cc_lin(rgb);
-                break;
-            case INACESAP0CCT:
-                rgb = acesAP0cct_lin(rgb);
+            case INACESCCT:
+                rgb = acescct_lin(rgb);
                 break;
             case INLOGC3:
                 rgb = logC3_lin(rgb, ei);
@@ -45,13 +47,17 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
             case INLOGC4:
                 rgb = logC4_lin(rgb);
                 break;
-            case INREC709:
-                rgb = rec709_lin(rgb);
+            case INCINEON:
+                rgb = cineon_lin(rgb);
                 break;
-            case INDCIP3:
-            case INDCIP3D60:
-            case INDCIP3D65:
-                rgb = dcip3_lin(rgb);
+            case INGAMMA22:
+                rgb = sRGBgamma22_lin(rgb);
+                break;
+            case INGAMMA24:
+                rgb = rec709gamma24_lin(rgb);
+                break;
+            case INGAMMA26:
+                rgb = dcip3gamma26_lin(rgb);
                 break;
             case INGEN5:
                 rgb = gen5_lin(rgb);
@@ -59,11 +65,12 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
         }
     }
     if (mapcolorspace) {
-        switch (inputtransform) {
+        switch (inputcolorspace) {
             case INACESAP0:
-            case INACESAP0CC:
-            case INACESAP0CCT:
                 rgb = acesAP0_xyz(rgb);
+                break;
+            case INACESAP1:
+                rgb = acesAP1_xyz(rgb);
                 break;
             case INLOGC3:
                 rgb = logC3_xyz(rgb);
@@ -105,11 +112,12 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     }
     // output transform
     if (mapcolorspace) {
-        switch (outputtransform) {
+        switch (outputcolorspace) {
             case OUTACESAP0:
-            case INACESAP0CC:
-            case INACESAP0CCT:
                 rgb = xyz_acesAP0(rgb);
+                break;
+            case OUTACESAP1:
+                rgb = xyz_acesAP1(rgb);
                 break;
             case OUTLOGC3:
                 rgb = xyz_logC3(rgb);
@@ -145,15 +153,12 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     }
     // output gamma
     if (mapgamma) {
-        switch (outputtransform) {
-            case OUTACESAP0:
-                rgb = lin_acesAP0(rgb);
+        switch (outputgamma) {
+            case OUTACESCC:
+                rgb = lin_acescc(rgb);
                 break;
-            case OUTACESAP0CC:
-                rgb = lin_acesAP0cc(rgb);
-                break;
-            case OUTACESAP0CCT:
-                rgb = lin_acesAP0cct(rgb);
+            case OUTACESCCT:
+                rgb = lin_acescct(rgb);
                 break;
             case OUTLOGC3:
                 rgb = lin_logC3(rgb, ei);
@@ -161,13 +166,17 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
             case OUTLOGC4:
                 rgb = lin_logC4(rgb);
                 break;
-            case OUTREC709:
-                rgb = lin_rec709(rgb);
+            case OUTCINEON:
+                rgb = lin_cineon(rgb);
                 break;
-            case INDCIP3:
-            case INDCIP3D60:
-            case INDCIP3D65:
-                rgb = lin_dcip3(rgb);
+            case OUTGAMMA22:
+                rgb = lin_sRGBgamma22(rgb);
+                break;
+            case OUTGAMMA24:
+                rgb = lin_rec709gamma24(rgb);
+                break;
+            case OUTGAMMA26:
+                rgb = lin_dcip3gamma26(rgb);
                 break;
             case OUTGEN5:
                 rgb = lin_gen5(rgb);
@@ -178,6 +187,9 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     switch (toneootf) {
         case OFDCIP3REC709:
             rgb = tonemap_ootf_dcip3_rec709(rgb);
+            break;
+        case OFSRGBREC709:
+            rgb = tonemap_ootf_sRGB_rec709(rgb);
             break;
         case OFREC709DCIP3:
             rgb = tonemap_ootf_rec709_dcip3(rgb);
