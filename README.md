@@ -19,6 +19,7 @@
       - [LogC exposure](#logc-exposure)
       - [LogC print](#logc-print)
     - [Utilities](#utilities)
+      - [Matrix](#matrix)
       - [Stripify](#stripify)
       - [Saturation](#saturation)
       - [Tonecurve](#tonecurve)
@@ -151,6 +152,12 @@ Made for print emulation, this DCTL applies DaVinci Resolve's built-in film look
 - https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Print.dctl
 
 ### Utilities
+
+#### Matrix
+
+Matrix adjustments, a utility for copying matrix values.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Stripify.dctl
 
 #### Stripify
 
