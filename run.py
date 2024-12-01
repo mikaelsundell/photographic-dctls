@@ -98,6 +98,10 @@ def run_snapshot():
         print("Target directory does not exist.")
         sys.exit(1)
 
+def run_update():
+    print("Getting latest changes from Github")
+    os.system('git pull')
+
 def main():
     if len(sys.argv) != 2:
         print("Usage: python script.py {log|readme|examples|install|snapshot}")
@@ -114,8 +118,10 @@ def main():
         run_install()
     elif command == 'snapshot':
         run_snapshot()
+    elif command == 'update':
+        run_update()
     else:
-        print("Usage: python script.py {log|readme|examples|install|snapshot}")
+        print("Usage: python script.py {log|readme|examples|install|snapshot|update}")
         sys.exit(1)
 
 if __name__ == "__main__":
