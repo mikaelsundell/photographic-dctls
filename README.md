@@ -39,8 +39,8 @@ Introduction
 
 <img src="resources/dctl.jpg" width="100%" style="padding-bottom: 20px;" />
 
-This collection of DCTL scripts is all about exploring and learning the math behind color science like ARRI LogC3, LogC4, ACES AP0, Gen5, and Cineon. It's a creative, photographic-inspired approach to color correction and grading, with a focus on look adjustments and classic print techniques rather than just sticking to technical workflows. The project is a work in progress, so new ideas and techniques will keep popping up. Some concepts are a bit experimental and may overlap with Resolve's built-in tools, and file names or structures might change along the way.
-  
+This set of DCTL scripts is all about experimenting with the math behind color science, including ARRI LogC, ACES AP0, Cineon, and more. It's a creative, photography-inspired take on color correction and grading, focusing on looks and print techniques instead of strict technical workflows. The project is still evolving, so new ideas and techniques will be added over time. Some of the concepts are a bit experimental and might overlap with Resolve's built-in tools, and the file names or structure could change as things develop.
+
 Installation and utils
 ---------
 
