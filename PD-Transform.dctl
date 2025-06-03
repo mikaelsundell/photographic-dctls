@@ -59,7 +59,7 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
             case INGAMMA26:
                 rgb = dcip3gamma26_lin(rgb);
                 break;
-            case INGEN5:
+            case INFILM5:
                 rgb = gen5_lin(rgb);
                 break;
         }
