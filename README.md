@@ -7,30 +7,28 @@
   - [Installation and utils](#installation-and-utils)
     - [The run.py script](#the-runpy-script)
     - [Quick install for Windows users](#quick-install-for-windows-users)
-    - [DCTL compatibility](#dctl-compatibility)
-  - [Verified DCTLs](#verified-dctls)
-    - [Cineon color processing](#cineon-color-processing)
-      - [Cineon exposure](#cineon-exposure)
-      - [Cineon inversion](#cineon-inversion)
-      - [ACES scene-linear and calibration curves](#aces-scene-linear-and-calibration-curves)
-      - [Cineon exposure](#cineon-exposure-1)
-      - [Cineon transform](#cineon-transform)
-    - [ARRI LogC color processing](#arri-logc-color-processing)
-      - [LogC exposure](#logc-exposure)
-      - [LogC print](#logc-print)
-    - [Utilities](#utilities)
-      - [Matrix](#matrix)
-      - [Stripify](#stripify)
-      - [Saturation](#saturation)
-      - [Tonecurve](#tonecurve)
-      - [Transform](#transform)
-  - [Experimental DCTLs](#experimental-dctls)
-      - [LogC3 temperature](#logc3-temperature)
-      - [Grade](#grade)
+    - [Compatibility](#compatibility)
+  - [DCTLs](#dctls)
+    - [Cineon DCTLs](#cineon-dctls)
+      - [PD-Cineon-Exposure](#pd-cineon-exposure)
+      - [PD-Cineon-Invert](#pd-cineon-invert)
+    - [LogC3 and LogC4 DCTLs](#logc3-and-logc4-dctls)
+      - [PD-LogC-Exposure](#pd-logc-exposure)
+      - [PD-LogC-Print](#pd-logc-print)
+    - [Utility DCTLs](#utility-dctls)
+      - [PD-Grade](#pd-grade)
+      - [PD-Matrix](#pd-matrix)
+      - [PD-Stripify](#pd-stripify)
+      - [PD-Saturation](#pd-saturation)
+      - [PD-Tonecurve](#pd-tonecurve)
+      - [PD-Transform](#pd-transform)
+        - [Supported color spaces](#supported-color-spaces)
+        - [Supported gamma encodings](#supported-gamma-encodings)
+        - [Additional features](#additional-features)
   - [Reference charts](#reference-charts)
       - [ACES Macbeth 50D 5203 EXR from rawtoaces](#aces-macbeth-50d-5203-exr-from-rawtoaces)
-      - [ARRI LogC3 stepchart - EXR 2K LogC3 encoding](#arri-logc3-stepchart---exr-2k-logc3-encoding)
-      - [ARRI LogC3 colorchecker - EXR 2K LogC3 encoding](#arri-logc3-colorchecker---exr-2k-logc3-encoding)
+      - [LogC3 stepchart - EXR 2K LogC3 encoding](#logc3-stepchart---exr-2k-logc3-encoding)
+      - [LogC3 colorchecker - EXR 2K LogC3 encoding](#logc3-colorchecker---exr-2k-logc3-encoding)
   - [References](#references)
   - [Web Resources](#web-resources)
 
@@ -39,7 +37,15 @@ Introduction
 
 <img src="resources/dctl.jpg" width="100%" style="padding-bottom: 20px;" />
 
-This set of DCTL scripts is all about experimenting with the math behind color science, including ARRI LogC, ACES AP0, Cineon, and more. It's a creative, photography-inspired take on color correction and grading, focusing on looks and print techniques instead of strict technical workflows. The project is still evolving, so new ideas and techniques will be added over time. Some of the concepts are a bit experimental and might overlap with Resolve's built-in tools, and the file names or structure could change as things develop.
+This set of DCTL scripts is about experimenting with the math behind color science, including LogC, ACES AP0, Cineon, and more. It's a creative, photography-inspired take, focusing on looks and print emulation techniques instead of strict technical workflows. The project is still evolving, so new ideas and techniques will be added over time. Some of the concepts are a bit experimental and might overlap with Resolve's built-in tools, and the file names or structure could change as things develop.
+
+Change log:
+
+| Date       | Description                             |
+|------------|-----------------------------------------|
+| 2025-06-06 | PD-Transform: Added support for Wide Gamut |
+| 2025-06-03 | PD-Transform: Fixed an issue with incorrect INGEN5 instead of INFILM5 enum |
+
 
 Installation and utils
 ---------
@@ -88,62 +94,39 @@ __To make a snapshot of hte DaVinvi Resolve DCTL folder:__
 ./install.bat
 ````
 
-### DCTL compatibility
+### Compatibility
 
 All DCTLs are tested and confirmed to work with Metal, CUDA, and OpenCL on both Mac and Windows platforms.
 
-## Verified DCTLs
+## DCTLs
 
-### Cineon color processing
+### Cineon DCTLs
 
-#### Cineon exposure
+#### PD-Cineon-Exposure
+
+Cineon exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Exposure.dctl
 
 ![PD-Cineon-Exposure figure](resources/PD-Cineon-Exposure.png "PD-Cineon-Exposure.dctl")
 
-Cineon exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Exposure.dctl
-
-#### Cineon inversion
-
-![PD-Cineon-Invert.dctl figure](resources/PD-Cineon-Invert.png "PD-Cineon-Invert.dctl")
+#### PD-Cineon-Invert
 
 Cineon negative inversion with precise control over the dmin ratio based inversion process using adjustable parameters such as density, bit depth, offset, and density scale. You can specify dmin base values manually as floating-point numbers (obtained from tools like Pixel Analyzer in Nuke or similar software) or sample them using a rectangular sampler from the border or other dmin base areas.
 
-#### ACES scene-linear and calibration curves
+![PD-Cineon-Invert.dctl figure](resources/PD-Cineon-Invert.png "PD-Cineon-Invert.dctl")
 
-To account for the variations of film stock and the use of ECN-2 chemicals, developer time and temperature, camera and lightbox settings - calibration curves are applied to match ideal cineon code values. In this example, photoscanning was used along with the rawtoaces tool to convert the Camera RAW CR2 file to scene-linear ACES, starting with as much information as possible. However, because the science is not exact, manual tweaking using density scaling and calibration curves is needed depending on the setup.
+### LogC3 and LogC4 DCTLs
 
-![PD-Cineon-Invert.dctl figure](resources/PD-LogC3-Invert_calibration.png "PD-Cineon-Invert.dctl")
-
-Figure: Color calibration curves and macbeth charts at different exposures for adjustments.
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Invert.dctl
-- https://github.com/AcademySoftwareFoundation/rawtoaces
-
-#### Cineon exposure
-
-Cineon exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Exposure.dctl
-
-#### Cineon transform
-
-Cineon conversion to and from linear. 
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Transform.dctl
-
-### ARRI LogC color processing
-
-#### LogC exposure
-
-![PD-LogC3-Exposure.dctl figure](resources/PD-LogC3-Exposure.png "PD-LogC3-Exposure.dctl")
+#### PD-LogC-Exposure
 
 LogC3 exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Exposure.dctl
 
-#### LogC print
+![PD-LogC3-Exposure.dctl figure](resources/PD-LogC3-Exposure.png "PD-LogC3-Exposure.dctl")
+
+#### PD-LogC-Print
 
 ![PD-LogC3-Print.dctl figure](resources/PD-LogC3-Print.png "PD-LogC3-Print.dctl")
 
@@ -151,51 +134,86 @@ Made for print emulation, this DCTL applies DaVinci Resolve's built-in film look
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Print.dctl
 
-### Utilities
+### Utility DCTLs
 
-#### Matrix
+#### PD-Grade
+
+Grade adjustments, this DCTL is experimental code for lift, gamma, gain and log controls.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Grade.dctl
+
+#### PD-Matrix
 
 Matrix adjustments, a utility for copying matrix values.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Stripify.dctl
 
-#### Stripify
+#### PD-Stripify
 
 Matrix adjustments, this DCTL simplifies the color palette by pushing colors into a warm and cool strip.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Stripify.dctl
 
-#### Saturation
+#### PD-Saturation
 
 HSV-based adjustments, this DCTL provides a tool for fine-tuning saturation using saturation in HSV.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Saturation.dctl
 
-#### Tonecurve
+#### PD-Tonecurve
 
 Tone curve adjustments for contrast, shoulder and toe controls.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Tonecurve.dctl
 
-#### Transform
+#### PD-Transform
 
-Color space transformation to and from CIE XYZ linear.
+Color space transformations to and from CIE XYZ linear, tone compress, ootf and white point adaptation.
+
+##### Supported color spaces
+
+| Color space               | Description                         |
+|---------------------------|-------------------------------------|
+| CIE XYZ                   | Absolute colorimetric reference     |
+| AcesAP0 D60               | ACES input primaries                |
+| AcesAP1 D60               | ACES working space primaries        |
+| ARRI AWG3 D65             | ARRI Wide Gamut 3                   |
+| ARRI AWG4 D65             | ARRI Wide Gamut 4                   |
+| DaVinci Wide Gamut D65    | Resolve-native wide gamut           |
+| Rec709 D65                | HDTV color space                    |
+| sRGB D65                  | Standard RGB                        |
+| DCI-P3 'D60 sim' D60      | DCI-P3 simulated for D60 viewing    |
+| DCI-P3 Theatrical D63     | For cinema projection               |
+| DCI-P3 D65                | DCI-P3 adapted to D65               |
+| Blackmagic Gen5 D65       | Blackmagic Gen 5 camera space       |
+
+##### Supported gamma encodings
+
+| Gamma                   | Description                         |
+|-------------------------|-------------------------------------|
+| Linear                  | Scene-linear light                  |
+| AcesCC                  | Log encoding for ACES               |
+| AcesCCT                 | Log encoding, softer shadows        |
+| ARRI LogC3              | ARRI’s legacy log curve             |
+| ARRI LogC4              | ARRI’s updated log curve            |
+| Cineon                  | Kodak's film scan log format        |
+| DaVinci Intermediate    | Resolve-native log transfer         |
+| sRGB / Gamma 2.2        | Common for displays                 |
+| Rec709 / Gamma 2.4      | HDTV gamma                          |
+| DCI-P3 / Gamma 2.6      | Theatrical gamma                    |
+| Blackmagic Film         | Blackmagic Film Gen5 log            |
+
+##### Additional features
+
+| Feature                 | Options                              |
+|-------------------------|--------------------------------------|
+| **White Point Adaptation** | D60 → D65, D63 → D65, D65 → D60, D65 → D63 |
+| **Tone Compression**       | Reinhard, Inverse Reinhard         |
+| **Tone OOTF Mapping**      | DCI-P3 → Rec709, sRGB → Rec709, Rec709 → DCI-P3 |
+| **Exposure Index (EI)**    | For LogC3: EI 160 – EI 1600        |
+
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Transform.dctl
-
-## Experimental DCTLs
-
-#### LogC3 temperature
-
-LogC3 CAT02 color temperature adjustments.
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Temperature.dctl
-
-#### Grade
-
-Grade adjustments, this DCTL is experimental code for lift, gamma, gain and log controls.
-
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Grade.dctl
 
 ## Reference charts
 
@@ -209,13 +227,13 @@ Reference charts for testing and verifying DCTLs. Additional formats are availab
 
 - Download: [macbeth_50D_5203.exr](resources/macbeth_50D_5203.exr)
 
-#### ARRI LogC3 stepchart - EXR 2K LogC3 encoding 
+#### LogC3 stepchart - EXR 2K LogC3 encoding 
 
 ![llogctool_LogC3_stepchart_DCI_2K figure](resources/logctool_LogC3_stepchart_DCI_2K.png "ARRI LogC3 10-bit DPX")
 
 - Download: [logctool_LogC3_stepchart_DCI_2K.exr](https://mikaelsundell.s3.eu-west-1.amazonaws.com/github/logctool/logctool_LogC3_stepchart_DCI_2K.exr)
 
-#### ARRI LogC3 colorchecker - EXR 2K LogC3 encoding 
+#### LogC3 colorchecker - EXR 2K LogC3 encoding 
 
 ![logctool_LogC3_colorchecker_DCI_2K figure](resources/logctool_LogC3_colorchecker_DCI_2K.png "Cineon 10-bit DPX")
 
@@ -239,6 +257,7 @@ References
 * https://docs.acescentral.com/specifications/acescc/#color-space
 * https://www.arri.com/resource/blob/278790/dc29f7399c1dc9553d329e27f1409a89/2022-05-arri-logc4-specification-data.pdf
 * https://dicomp.arri.de/digital/digital_systems/DIcompanion/index.html
+* https://documents.blackmagicdesign.com/InformationNotes/DaVinci_Resolve_17_Wide_Gamut_Intermediate.pdf?_v=1628751610000
 
 **DCTLs, apps and resources**
 * https://github.com/thatcherfreeman/utility-dctls
