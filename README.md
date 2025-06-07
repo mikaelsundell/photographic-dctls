@@ -43,7 +43,7 @@ Change log:
 
 | Date       | Description                             |
 |------------|-----------------------------------------|
-| 2025-06-06 | PD-Transform: Added support for Wide Gamut |
+| 2025-06-06 | PD-Transform: Added support for DaVinci Wide Gamut |
 | 2025-06-03 | PD-Transform: Fixed an issue with incorrect INGEN5 instead of INFILM5 enum |
 
 
