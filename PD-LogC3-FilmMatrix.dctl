@@ -1,0 +1,36 @@
+// Copyright 2022-present Contributors to the photographic-dctl project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/mikaelsundell/photographic-dctls
+
+// clang-format off
+DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600});
+DEFINE_UI_PARAMS(convertlinear, Convert to linear, DCTLUI_CHECK_BOX, 1)
+DEFINE_UI_PARAMS(reverse, Reverse, DCTLUI_CHECK_BOX, 0)
+
+// headers
+#include "PD-Common.h"
+#include "PD-LogC.h"
+
+// transform
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    float3 rgb = make_float3(p_R, p_G, p_B);
+    if (convertlinear) {
+       rgb = logC3_lin(rgb, ei);
+    }
+    if (reverse) {
+        const float r = (rgb.x * 0.806165f) + (rgb.y * 0.168534f) + (rgb.z * 0.025301f);
+        const float g = (rgb.x * 0.091228f) + (rgb.y * 0.765221f) + (rgb.z * 0.14355f);
+        const float b = (rgb.x * 0.092241f) + (rgb.y * 0.251418f) + (rgb.z * 0.656341f);
+        rgb = make_float3(r, g, b);
+    } else {
+        const float r = (rgb.x * 1.271103f) + (rgb.y * -0.284279f) + (rgb.z * 0.013176f);
+        const float g = (rgb.x * -0.127165f) + (rgb.y * 1.436429f) + (rgb.z * -0.309264f);
+        const float b = (rgb.x * -0.129927f) + (rgb.y * -0.510286f) + (rgb.z * 1.640214f);
+        rgb = make_float3(r, g, b);
+    }
+    if (convertlinear) {
+       rgb = lin_logC3(rgb, ei);
+    }
+    return rgb;
+}

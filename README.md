@@ -15,6 +15,7 @@
     - [LogC3 and LogC4 DCTLs](#logc3-and-logc4-dctls)
       - [PD-LogC-Exposure](#pd-logc-exposure)
       - [PD-LogC-Print](#pd-logc-print)
+      - [PD-LogC-FilmMatrix](#pd-logc-filmmatrix)
     - [Utility DCTLs](#utility-dctls)
       - [PD-Grade](#pd-grade)
       - [PD-Matrix](#pd-matrix)
@@ -43,7 +44,9 @@ Change log:
 
 | Date       | Description                             |
 |------------|-----------------------------------------|
-| 2025-06-06 | PD-Transform: Added support for Wide Gamut |
+| 2025-06-15 | PD-LogC3-FilmMatrix: Added legacy LogC3 film matrix |
+| 2025-06-15 | PD-Transform: Fixed issue with sRGB in and out |
+| 2025-06-06 | PD-Transform: Added support for DaVinci Wide Gamut |
 | 2025-06-03 | PD-Transform: Fixed an issue with incorrect INGEN5 instead of INFILM5 enum |
 
 
@@ -122,7 +125,7 @@ Cineon negative inversion with precise control over the dmin ratio based inversi
 
 LogC3 exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Exposure.dctl
+- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC-Exposure.dctl
 
 ![PD-LogC3-Exposure.dctl figure](resources/PD-LogC3-Exposure.png "PD-LogC3-Exposure.dctl")
 
@@ -132,7 +135,13 @@ LogC3 exposure from photographic stops, incorporating a zone based false color t
 
 Made for print emulation, this DCTL applies DaVinci Resolve's built-in film looks to ARRI LogC3 and Cineon footage with adjustable controls for luminosity and color blending.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-Print.dctl
+- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC-Print.dctl
+
+#### PD-LogC-FilmMatrix
+
+The film style matrix makes the color characteristics of the Log C image similar to negative film scanned on an ARRISCAN.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-FilmMatrix.dctl
 
 ### Utility DCTLs
 
@@ -258,10 +267,12 @@ References
 * https://www.arri.com/resource/blob/278790/dc29f7399c1dc9553d329e27f1409a89/2022-05-arri-logc4-specification-data.pdf
 * https://dicomp.arri.de/digital/digital_systems/DIcompanion/index.html
 * https://documents.blackmagicdesign.com/InformationNotes/DaVinci_Resolve_17_Wide_Gamut_Intermediate.pdf?_v=1628751610000
+* https://www.arri.com/en/learn-help/learn-help-camera-system/image-science/vfx-faq
 
 **DCTLs, apps and resources**
 * https://github.com/thatcherfreeman/utility-dctls
 * https://github.com/AcademySoftwareFoundation/OpenRV/blob/main/src/plugins/rv-packages/additional_nodes
+* https://forum.blackmagicdesign.com/viewtopic.php?t=61073&p=348482
 * https://skia.googlesource.com/skia/+/70e432e72745/gm/hsl.cpp
 * https://colour.readthedocs.io
 * https://github.com/ampas/aces-dev
