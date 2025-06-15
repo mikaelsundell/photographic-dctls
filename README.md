@@ -117,6 +117,8 @@ Cineon exposure from photographic stops, incorporating a zone based false color 
 
 Cineon negative inversion with precise control over the dmin ratio based inversion process using adjustable parameters such as density, bit depth, offset, and density scale. You can specify dmin base values manually as floating-point numbers (obtained from tools like Pixel Analyzer in Nuke or similar software) or sample them using a rectangular sampler from the border or other dmin base areas.
 
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Invert.dctl
+
 ![PD-Cineon-Invert.dctl figure](resources/PD-Cineon-Invert.png "PD-Cineon-Invert.dctl")
 
 ### LogC3 and LogC4 DCTLs
