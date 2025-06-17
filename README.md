@@ -15,7 +15,7 @@
     - [LogC3 and LogC4 DCTLs](#logc3-and-logc4-dctls)
       - [PD-LogC-Exposure](#pd-logc-exposure)
       - [PD-LogC-Print](#pd-logc-print)
-      - [PD-LogC-FilmMatrix](#pd-logc-filmmatrix)
+      - [PD-LogC3-FilmMatrix](#pd-logc3-filmmatrix)
     - [Utility DCTLs](#utility-dctls)
       - [PD-Grade](#pd-grade)
       - [PD-Matrix](#pd-matrix)
@@ -139,7 +139,7 @@ Made for print emulation, this DCTL applies DaVinci Resolve's built-in film look
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-LogC-Print.dctl
 
-#### PD-LogC-FilmMatrix
+#### PD-LogC3-FilmMatrix
 
 The film style matrix makes the color characteristics of the Log C image similar to negative film scanned on an ARRISCAN.
 
