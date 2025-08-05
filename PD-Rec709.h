@@ -84,3 +84,24 @@ __DEVICE__ float3 rec709_xyz(float3 rgb) {
     struct Rec709Colorspace cs = rec709_colorspace();
     return Rec709Colorspace_rec709_xyz(cs, rgb);
 }    
+
+// convert ycbcr gamma ~2.4 to rec709
+__DEVICE__ float3 ycbcr_rgb709(float3 ycbcr)
+{
+    float y  = ycbcr.x;
+    float cb = ycbcr.y - 0.5;
+    float cr = ycbcr.z - 0.5;
+    float r = y + 1.5748 * cr;
+    float g = y - 0.1873 * cb - 0.4681 * cr;
+    float b = y + 1.8556 * cb;
+    return make_float3(r, g, b);
+}
+
+// convert rec709 to ycbcr gamma ~2.4
+__DEVICE__ float3 rgb709_ycbcr(float3 rgb)
+{
+    float y  = 0.2126 * rgb.x + 0.7152 * rgb.y + 0.0722 * rgb.z;
+    float cb = (rgb.z - y) / 1.8556 + 0.5;
+    float cr = (rgb.x - y) / 1.5748 + 0.5;
+    return make_float3(y, cb, cr);
+}

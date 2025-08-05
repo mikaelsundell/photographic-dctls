@@ -3,13 +3,14 @@
 // https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format on
+DEFINE_UI_PARAMS(convert, Convert, DCTLUI_COMBO_BOX, 0, {CVTNONE, CVTYCBCRREC709, CVTREC709YCBCR}, {None, YCbCr to Rec709/Gamma2.4, Rec709/Gamma2.4 to YCbCr});
 DEFINE_UI_PARAMS(inputcolorspace, Input colorspace, DCTLUI_COMBO_BOX, 0, {INXYZ, INACESAP0, INACESAP1, INAWGC3, INAWGC4, INDWG, INREC709, INSRGB, INDCIP3D60, INDCIP3, INDCIP3D65, INGEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
 DEFINE_UI_PARAMS(inputgamma, Input gamma, DCTLUI_COMBO_BOX, 0, {INLIN, INACESCC, INACESCCT, INLOGC3, INLOGC4, INCINEON, INDWGINTERMEDIATE, INSRGBGAMMA22, INGAMMA24, INGAMMA26, INFILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, DaVinci Intermediate, sRGB/Gamma2.2, Rec709/Gamma2.4, DCI-P3/Gamma2.6, Blackmagic Film})
 DEFINE_UI_PARAMS(outputcolorspace, Output colorspace, DCTLUI_COMBO_BOX, 0, {OUTXYZ, OUTACESAP0, OUTACESAP1, OUTAWGC3, OUTAWGC4, OUTDWG, OUTREC709, OUTSRGB, OUTDCIP3D60, OUTDCIP3, OUTDCIP3D65, OUTGEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
 DEFINE_UI_PARAMS(outputgamma, Output gamma, DCTLUI_COMBO_BOX, 0, {OUTLIN, OUTACESCC, OUTACESCCT, OUTLOGC3, OUTLOGC4, OUTCINEON, OUTDWGINTERMEDIATE, OUTSRGBGAMMA22, OUTGAMMA24, OUTGAMMA26, OUTFILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, DaVinci Intermediate, sRGB/Gamma2.2, Rec709/Gamma2.4, DCI-P3/Gamma2.6, Blackmagic Film})
 DEFINE_UI_PARAMS(whitepoint, Whitepoint adaptation, DCTLUI_COMBO_BOX, 0, {WPNONE, WPD60D65, WPD63D65, WPD65D60, WPD65D63}, {None, D60 to D65, D63 to D65, D65 to D60, D65 to D63})
 DEFINE_UI_PARAMS(tonecompress, Tone compress, DCTLUI_COMBO_BOX, 0, {TCNONE, TCREINHARD, TCINVERSEREINHARD}, {None, Reinhard, Inverse Reinhard})
-DEFINE_UI_PARAMS(toneootf, Tone OOTF, DCTLUI_COMBO_BOX, 0, {OOTFNONE, OFDCIP3REC709, OFSRGBREC709, OFREC709DCIP3}, {None, DCI-P3 to Rec709, sRGB to Rec709, Rec709 to DCI-P3})
+DEFINE_UI_PARAMS(toneootf, Tone OOTF, DCTLUI_COMBO_BOX, 0, {OOTFNONE, OFDCIP3REC709, OFSRGBREC709, OFREC709SRGB, OFREC709DCIP3}, {None, DCI-P3 to Rec709, sRGB to Rec709, Rec709 to sRGB, Rec709 to DCI-P3})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(mapcolorspace, Map colorspace, DCTLUI_CHECK_BOX, 1)
 DEFINE_UI_PARAMS(mapgamma, Map gamma, DCTLUI_CHECK_BOX, 1)
@@ -33,6 +34,15 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
 
+    // convert
+    switch (convert) {
+        case CVTYCBCRREC709:
+            rgb = ycbcr_rgb709(rgb);
+            break;
+        case CVTREC709YCBCR:
+            rgb = rgb709_ycbcr(rgb);
+            break;
+    }
     // input transform
     if (mapgamma) {
         switch (inputgamma) {
@@ -209,6 +219,9 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
             break;
         case OFSRGBREC709:
             rgb = tonemap_ootf_sRGB_rec709(rgb);
+            break;
+        case OFREC709SRGB:
+            rgb = tonemap_ootf_rec709_sRGB(rgb);
             break;
         case OFREC709DCIP3:
             rgb = tonemap_ootf_rec709_dcip3(rgb);

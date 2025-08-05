@@ -39,7 +39,7 @@ __DEVICE__ float tonemap_scurve(float x, float p, float c) {
    }
 }
 
-// ootf forward
+// ootf
 __DEVICE__ float3 tonemap_ootf_dcip3_rec709(float3 log) {
     log = lin_rec709gamma24(dcip3gamma26_lin(log));
     return pow_f3(log, 2.2 / 2.6); // purely experiemental dcip3 to rec709
@@ -50,7 +50,11 @@ __DEVICE__ float3 tonemap_ootf_sRGB_rec709(float3 log) {
     return pow_f3(log, 2.2 / 2.4); // purely experiemental sRGB to rec709
 }
 
-// ootf inverse
+__DEVICE__ float3 tonemap_ootf_rec709_sRGB(float3 log) {
+    log = lin_sRGBgamma22(rec709gamma24_lin(log));
+    return pow_f3(log, 2.4 / 2.2); // purely experiemental rec709 to srgb
+}
+
 __DEVICE__ float3 tonemap_ootf_rec709_dcip3(float3 log) {
     log = lin_dcip3gamma26(rec709gamma24_lin(log));
     return pow_f3(log, 2.6 / 2.2); // purely experiemental rec709 to dcip3
