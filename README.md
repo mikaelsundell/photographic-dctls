@@ -45,7 +45,7 @@ Change log:
 
 | Date       | Description                             |
 |------------|-----------------------------------------|
-| 2025-08-05 | Fixed typos in comments for color space matrices |
+| 2025-08-16 | Fixed typos in comments for color space matrices |
 | 2025-08-05 | PD-Transform: Added support for YCbCr conversion |
 | 2025-06-15 | PD-LogC3-FilmMatrix: Added legacy LogC3 film matrix |
 | 2025-06-15 | PD-Transform: Fixed issue with sRGB in and out |
