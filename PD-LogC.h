@@ -131,55 +131,50 @@ struct LogCColorspace
     struct Matrix xyz_matrix;
 };
 
-// logC4 colorspace
-struct LogC4Colorspace
-{
-    struct Matrix logC4_matrix;
-    struct Matrix xyz_matrix;
-};
+__DEVICE__ float3 LogCColorspace_xyz_logC(struct LogCColorspace cs, float3 xyz) {
+    return mult_matrix(xyz, cs.logC_matrix);
+}
+
+__DEVICE__ float3 LogCColorspace_logC_xyz(struct LogCColorspace cs, float3 logC3) {
+    return mult_matrix(logC3, cs.xyz_matrix);
+}
 
 __DEVICE__ struct LogCColorspace logC3_colorspace() {
     struct LogCColorspace cs;
     // colortool --inputcolorspace AWG3 -v
-    // logC3 matrix
+    // convert xyz to logC3 matrix
     cs.logC_matrix.m00 = 1.789066; cs.logC_matrix.m01 = -0.482534; cs.logC_matrix.m02 = -0.200076;
     cs.logC_matrix.m03 = -0.639849; cs.logC_matrix.m04 = 1.396400; cs.logC_matrix.m05 = 0.194432;
     cs.logC_matrix.m06 = -0.041532; cs.logC_matrix.m07 = 0.082335; cs.logC_matrix.m08 = 0.878868;
-    // xyz matrix
+    // convert logC3 to xyz matrix
     cs.xyz_matrix.m00 = 0.638008; cs.xyz_matrix.m01 = 0.214704; cs.xyz_matrix.m02 = 0.097744;
     cs.xyz_matrix.m03 = 0.291954; cs.xyz_matrix.m04 = 0.823841; cs.xyz_matrix.m05 = -0.115795;
     cs.xyz_matrix.m06 = 0.002798; cs.xyz_matrix.m07 = -0.067034; cs.xyz_matrix.m08 = 1.153294;
     return cs;
 }
 
+__DEVICE__ float3 logc3_y_lum_coeff() {
+    struct LogCColorspace cs = logC3_colorspace();
+    return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
+}
+
 __DEVICE__ struct LogCColorspace logC4_colorspace() {
     struct LogCColorspace cs;
     // colortool --inputcolorspace AWG4 -v
-    // logC4 matrix
+    // convert xyz to logC4 matrix
     cs.logC_matrix.m00 = 1.5092155; cs.logC_matrix.m01 = -0.2505973; cs.logC_matrix.m02 = -0.1688115;
     cs.logC_matrix.m03 = -0.4915455; cs.logC_matrix.m04 = 1.3612455; cs.logC_matrix.m05 = 0.0972829;
     cs.logC_matrix.m06 = 0.0000000; cs.logC_matrix.m07 = 0.0000000; cs.logC_matrix.m08 = 0.9182250;
-    // xyz matrix
+    // convert logC4 to xyz matrix
     cs.xyz_matrix.m00 = 0.7048583; cs.xyz_matrix.m01 = 0.1297603; cs.xyz_matrix.m02 = 0.1158373;
     cs.xyz_matrix.m03 = 0.2545242; cs.xyz_matrix.m04 = 0.7814777; cs.xyz_matrix.m05 = -0.0360019;
     cs.xyz_matrix.m06 = 0.0000000; cs.xyz_matrix.m07 = 0.0000000; cs.xyz_matrix.m08 = 1.0890578;
     return cs;
 }
 
-__DEVICE__ float3 LogCColorspace_xyz_logC3(struct LogCColorspace cs, float3 xyz) {
-    return mult_matrix(xyz, cs.logC_matrix);
-}
-
-__DEVICE__ float3 LogCColorspace_logC3_xyz(struct LogCColorspace cs, float3 logC3) {
-    return mult_matrix(logC3, cs.xyz_matrix);
-}
-
-__DEVICE__ float3 LogCColorspace_xyz_logC4(struct LogCColorspace cs, float3 xyz) {
-    return mult_matrix(xyz, cs.logC_matrix);
-}
-
-__DEVICE__ float3 LogCColorspace_logC4_xyz(struct LogCColorspace cs, float3 logC4) {
-    return mult_matrix(logC4, cs.xyz_matrix);
+__DEVICE__ float3 logc4_y_lum_coeff() {
+    struct LogCColorspace cs = logC4_colorspace();
+    return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
 }
 
 // convert linear to LogC3
@@ -192,40 +187,40 @@ __DEVICE__ float3 lin_logC3(float3 rgb, int ei) {
 __DEVICE__ float3 logC3_lin(float3 rgb, int ei) {
     struct LogC3Curve cv = logC3_curve(ei);
     return make_float3(LogC3Curve_logC3_lin(cv, rgb.x), LogC3Curve_logC3_lin(cv, rgb.y), LogC3Curve_logC3_lin(cv, rgb.z));
-}    
+}   
 
-// convert LogC3 to xyz
-__DEVICE__ float3 xyz_logC3(float3 rgb) {
-    struct LogCColorspace cs = logC3_colorspace();
-    return LogCColorspace_xyz_logC3(cs, rgb);
-}
-
-// convert XYZ to LogC3
-__DEVICE__ float3 logC3_xyz(float3 rgb) {
-    struct LogCColorspace cs = logC3_colorspace();
-    return LogCColorspace_logC3_xyz(cs, rgb);
-}    
-
-// convert linear to LogC4
+// convert linear to logC4
 __DEVICE__ float3 lin_logC4(float3 rgb) {
     struct LogC4Curve cv = logC4_curve();
     return make_float3(LogC4Curve_lin_logC4(cv, rgb.x), LogC4Curve_lin_logC4(cv, rgb.y), LogC4Curve_lin_logC4(cv, rgb.z));
 }
 
-// convert LogC4 to linear
+// convert logC4 to linear
 __DEVICE__ float3 logC4_lin(float3 rgb) {
     struct LogC4Curve cv = logC4_curve();
     return make_float3(LogC4Curve_logC4_lin(cv, rgb.x), LogC4Curve_logC4_lin(cv, rgb.y), LogC4Curve_logC4_lin(cv, rgb.z));
-}    
-
-// convert LogC4 to xyz
-__DEVICE__ float3 xyz_logC4(float3 rgb) {
-    struct LogCColorspace cs = logC4_colorspace();
-    return LogCColorspace_xyz_logC4(cs, rgb);
 }
 
-// convert XYZ to LogC4
+// convert xyz to logC3
+__DEVICE__ float3 xyz_logC3(float3 rgb) {
+    struct LogCColorspace cs = logC3_colorspace();
+    return LogCColorspace_xyz_logC(cs, rgb);
+}
+
+// convert logC3 to xyz
+__DEVICE__ float3 logC3_xyz(float3 rgb) {
+    struct LogCColorspace cs = logC3_colorspace();
+    return LogCColorspace_logC_xyz(cs, rgb);
+}    
+
+// convert xyz to logC4
+__DEVICE__ float3 xyz_logC4(float3 rgb) {
+    struct LogCColorspace cs = logC4_colorspace();
+    return LogCColorspace_xyz_logC(cs, rgb);
+}
+
+// convert logc4 to xyz
 __DEVICE__ float3 logC4_xyz(float3 rgb) {
     struct LogCColorspace cs = logC4_colorspace();
-    return LogCColorspace_logC4_xyz(cs, rgb);
+    return LogCColorspace_logC_xyz(cs, rgb);
 }    

@@ -30,6 +30,7 @@
       - [ACES Macbeth 50D 5203 EXR from rawtoaces](#aces-macbeth-50d-5203-exr-from-rawtoaces)
       - [LogC3 stepchart - EXR 2K LogC3 encoding](#logc3-stepchart---exr-2k-logc3-encoding)
       - [LogC3 colorchecker - EXR 2K LogC3 encoding](#logc3-colorchecker---exr-2k-logc3-encoding)
+  - [Projects](#projects)
   - [References](#references)
   - [Web Resources](#web-resources)
 
@@ -44,6 +45,7 @@ Change log:
 
 | Date       | Description                             |
 |------------|-----------------------------------------|
+| 2025-08-05 | Fixed typos in comments for color space matrices |
 | 2025-08-05 | PD-Transform: Added support for YCbCr conversion |
 | 2025-06-15 | PD-LogC3-FilmMatrix: Added legacy LogC3 film matrix |
 | 2025-06-15 | PD-Transform: Fixed issue with sRGB in and out |
@@ -252,17 +254,22 @@ Reference charts for testing and verifying DCTLs. Additional formats are availab
 - Download: [logctool_LogC3_colorchecker_DCI_2K.exr](https://mikaelsundell.s3.eu-west-1.amazonaws.com/github/logctool/logctool_LogC3_colorchecker_DCI_2K.exr)
 
 
+
+Projects
+---------
+
+* https://github.com/mikaelsundell/colortool
+* https://github.com/mikaelsundell/logctool
+
+
 References
 ---------
 
-**Github projects**
-* https://github.com/mikaelsundell/colortool
-* https://github.com/mikaelsundell/logctool
-  
-**Wikipedia**
+**Wikipedia and papers**
 * https://en.wikipedia.org/wiki/Rec._709
 * https://en.wikipedia.org/wiki/DCI-P3
 * https://en.wikipedia.org/wiki/Grayscale
+* https://dl.acm.org/doi/pdf/10.1145/566654.566575
 
 **Format specifications**
 * http://www.dcimovies.com/archives/spec_v1_1/DCI_DCinema_System_Spec_v1_1.pdf
