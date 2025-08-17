@@ -39,7 +39,7 @@ Introduction
 
 <img src="resources/dctl.jpg" width="100%" style="padding-bottom: 20px;" />
 
-This set of DCTL scripts is about experimenting with the math behind color science, including LogC, ACES AP0, Cineon, and more. It's a creative, photography-inspired take, focusing on looks and print emulation techniques instead of strict technical workflows. The project is still evolving, so new ideas and techniques will be added over time. Some of the concepts are a bit experimental and might overlap with Resolve's built-in tools, and the file names or structure could change as things develop.
+This set of DCTL scripts is about experimenting with the math behind color science — exploring spaces like LogC, ACES AP0, Cineon, and more. These are fundamental concepts to better understand modern color pipelines such as ACES, but the approach here is intentionally creative and photography-inspired. The focus is on looks, print emulation techniques, and exploration rather than strictly technical workflows. The project is evolving, so new ideas and techniques will be added over time. Some parts overlap with Resolve’s built-in tools, and file names or structure could change as things develop.
 
 Change log:
 
