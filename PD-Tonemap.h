@@ -61,10 +61,30 @@ __DEVICE__ float3 tonemap_ootf_rec709_dcip3(float3 log) {
 }
 
 // tonecompress reinhard
-__DEVICE__ float3 tonecompress_reinhard(float3 lin, float exp) {
+__DEVICE__ float3 tonecompress_reinhard_simple(float3 lin, float exp) {
     return lin / (1.0 + lin * exp);
 }
 
-__DEVICE__ float3 tonecompress_inverse_reinhard(float3 compressed, float exp) {
-    return compressed / (1.0 - compressed * exp);
+__DEVICE__ float tonecompress_reinhard_scalar(float Y, float exp) {
+    float Yp = Y / (1.0f + exp * Y);
+    float denom = max_f(Y, 1e-6f);        // safety for very small/odd Ys
+    return Yp / denom;                    // s = Y'/Y  in (0,1]
+}
+
+__DEVICE__ float3 tonecompress_reinhard_luma(float3 rgb, float3 w, float exp, float sat)
+{
+    float  Y = rgb.x*w.x + rgb.y*w.y + rgb.z*w.z;
+    // luma-preserving scale
+    float  s  = tonecompress_reinhard_scalar(Y, exp);
+    float3 rgblp = rgb * s;
+    // build a neutral of the *new* luminance Y' = s*Y.
+    // gray is (g,g,g) and w.x+w.y+w.z == 1, so (Y',Y',Y') has luminance Y'.
+    float Yp = s * Y;
+    float3 gray = make_float3(Yp, Yp, Yp);
+    // desaturate into the shoulder proportional to compression.
+    // sat_mix in [0..1]: 1 => keep chroma; 0 => fully gray.
+    // using pow(s, kSat) keeps midtones intact and only tames compressed highs.
+    float satmix = pow_f(s, sat);
+    // blend between gray and luma-preserved RGB
+    return gray + (rgblp - gray) * satmix;
 }
