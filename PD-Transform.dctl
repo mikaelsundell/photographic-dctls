@@ -2,17 +2,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// Color space transformations to and from CIE XYZ linear, tone compress, ootf and white point adaptation.
+// Color space transformations to and from CIE XYZ linear, tone compression,
+// display contrast and whitepoint adaptation.
 
 // clang-format off
 DEFINE_UI_PARAMS(convert, Convert, DCTLUI_COMBO_BOX, 0, {CVTNONE, CVTYCBCRREC709, CVTREC709YCBCR}, {None, YCbCr to Rec709/Gamma2.4, Rec709/Gamma2.4 to YCbCr});
-DEFINE_UI_PARAMS(inputcolorspace, Input colorspace, DCTLUI_COMBO_BOX, 0, {INXYZ, INACESAP0, INACESAP1, INAWGC3, INAWGC4, INDWG, INREC709, INSRGB, INDCIP3D60, INDCIP3, INDCIP3D65, INGEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
-DEFINE_UI_PARAMS(inputgamma, Input gamma, DCTLUI_COMBO_BOX, 0, {INLIN, INACESCC, INACESCCT, INLOGC3, INLOGC4, INCINEON, INDWGINTERMEDIATE, INSRGBGAMMA22, INGAMMA24, INGAMMA26, INFILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, DaVinci Intermediate, sRGB/Gamma2.2, Rec709/Gamma2.4, DCI-P3/Gamma2.6, Blackmagic Film})
-DEFINE_UI_PARAMS(outputcolorspace, Output colorspace, DCTLUI_COMBO_BOX, 0, {OUTXYZ, OUTACESAP0, OUTACESAP1, OUTAWGC3, OUTAWGC4, OUTDWG, OUTREC709, OUTSRGB, OUTDCIP3D60, OUTDCIP3, OUTDCIP3D65, OUTGEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
-DEFINE_UI_PARAMS(outputgamma, Output gamma, DCTLUI_COMBO_BOX, 0, {OUTLIN, OUTACESCC, OUTACESCCT, OUTLOGC3, OUTLOGC4, OUTCINEON, OUTDWGINTERMEDIATE, OUTSRGBGAMMA22, OUTGAMMA24, OUTGAMMA26, OUTFILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, DaVinci Intermediate, sRGB/Gamma2.2, Rec709/Gamma2.4, DCI-P3/Gamma2.6, Blackmagic Film})
+DEFINE_UI_PARAMS(inputcolorspace, Input colorspace, DCTLUI_COMBO_BOX, 0, {INXYZ, INACESAP0, INACESAP1, INAWGC3, INAWGC4, INGEN5, INDWG, INDCIP3D60, INDCIP3D65, INDCIP3, INREC2020, INREC709, INSRGB}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, Blackmagic Gen5 D65, DaVinci Wide Gamut D65, DCI-P3 'D60 sim' D60, DCI-P3 D65, DCI-P3 Theatrical D63, Rec2020 D65, Rec709 D65, sRGB D65})
+DEFINE_UI_PARAMS(inputgamma, Input gamma, DCTLUI_COMBO_BOX, 0, {INLIN, INACESCC, INACESCCT, INAPPLELOG, INLOGC3, INLOGC4, INFILM5, INCINEON, INDWGINTERMEDIATE, INGAMMA22, INGAMMA24, INGAMMA26, INREC709GAMMA, INSRGBGAMMA}, {Linear, AcesCC, AcesCCT, Apple Log, ARRI LogC3, ARRI LogC4, Blackmagic Film, Cineon, DaVinci Intermediate, Gamma2.2, Gamma2.4, Gamma2.6, Rec709, sRGB})
+DEFINE_UI_PARAMS(outputcolorspace, Output colorspace, DCTLUI_COMBO_BOX, 0, {OUTXYZ, OUTACESAP0, OUTACESAP1, OUTAWGC3, OUTAWGC4, OUTGEN5, OUTDWG, OUTDCIP3D60, OUTDCIP3D65, OUTDCIP3, OUTREC2020, OUTREC709, OUTSRGB}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, Blackmagic Gen5 D65, DaVinci Wide Gamut D65, DCI-P3 'D60 sim' D60, DCI-P3 D65, DCI-P3 Theatrical D63, Rec2020 D65, Rec709 D65, sRGB D65})
+DEFINE_UI_PARAMS(outputgamma, Output gamma, DCTLUI_COMBO_BOX, 0, {OUTLIN, OUTACESCC, OUTACESCCT, OUTAPPLELOG, OUTLOGC3, OUTLOGC4, OUTFILM5, OUTCINEON, OUTDWGINTERMEDIATE, OUTGAMMA22, OUTGAMMA24, OUTGAMMA26, OUTREC709GAMMA, OUTSRGBGAMMA}, {Linear, AcesCC, AcesCCT, Apple Log, ARRI LogC3, ARRI LogC4, Blackmagic Film, Cineon, DaVinci Intermediate, Gamma2.2, Gamma2.4, Gamma2.6, Rec709, sRGB})
 DEFINE_UI_PARAMS(whitepoint, Whitepoint adaptation, DCTLUI_COMBO_BOX, 0, {WPNONE, WPD60D65, WPD63D65, WPD65D60, WPD65D63}, {None, D60 to D65, D63 to D65, D65 to D60, D65 to D63})
 DEFINE_UI_PARAMS(tonecompress, Tone compress, DCTLUI_COMBO_BOX, 0, {TCNONE, TCREINHARD}, {None, Reinhard})
-DEFINE_UI_PARAMS(toneootf, Tone OOTF, DCTLUI_COMBO_BOX, 0, {OOTFNONE, OFDCIP3REC709, OFSRGBREC709, OFREC709SRGB, OFREC709DCIP3}, {None, DCI-P3 to Rec709, sRGB to Rec709, Rec709 to sRGB, Rec709 to DCI-P3})
+DEFINE_UI_PARAMS(tonecontrast, Display contrast, DCTLUI_COMBO_BOX, 0, {TCTNONE, TCTGAMMA26REC709, TCTSRGBREC709, TCTREC709SRGB, TCTREC709GAMMA26}, {None, Gamma2.6 to Rec709, sRGB to Rec709, Rec709 to sRGB, Rec709 to Gamma2.6})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(mapcolorspace, Map colorspace, DCTLUI_CHECK_BOX, 1)
 DEFINE_UI_PARAMS(mapgamma, Map gamma, DCTLUI_CHECK_BOX, 1)
@@ -21,102 +22,125 @@ DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 // clang-format on
 #include "PD-Common.h"
 #include "PD-Aces.h"
+#include "PD-Apple.h"
 #include "PD-Cineon.h"
-#include "PD-DWG.h"
 #include "PD-DCIP3.h"
+#include "PD-DWG.h"
+#include "PD-Gamma.h"
 #include "PD-Gen5.h"
 #include "PD-LogC.h"
-#include "PD-Rec709.h"
+#include "PD-Rec.h"
 #include "PD-sRGB.h"
 #include "PD-Tonemap.h"
 #include "PD-Whitepoint.h"
 
-__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+__DEVICE__ float3
+transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
-    float3 lumcoeff;
+
+    // XYZ uses Y directly as luminance. Output RGB colorspaces replace this
+    // with their corresponding luminance coefficients below.
+    float3 lumcoeff = make_float3(0.0f, 1.0f, 0.0f);
+
     // convert
     switch (convert) {
-        case CVTYCBCRREC709:
-            rgb = ycbcr_rgb709(rgb);
-            break;
-        case CVTREC709YCBCR:
-            rgb = rgb709_ycbcr(rgb);
-            break;
+    case CVTYCBCRREC709:
+        rgb = ycbcr_rgb709(rgb);
+        break;
+    case CVTREC709YCBCR:
+        rgb = rgb709_ycbcr(rgb);
+        break;
     }
-    // input transform
+
+    // input gamma
     if (mapgamma) {
         switch (inputgamma) {
-            case INACESCC:
-                rgb = acescc_lin(rgb);
-                break;
-            case INACESCCT:
-                rgb = acescct_lin(rgb);
-                break;
-            case INLOGC3:
-                rgb = logC3_lin(rgb, ei);
-                break;
-            case INLOGC4:
-                rgb = logC4_lin(rgb);
-                break;
-            case INCINEON:
-                rgb = cineon_lin(rgb);
-                break;
-            case INDWGINTERMEDIATE:
-                rgb = dwgintermediate_lin(rgb);
-                break;
-            case INSRGBGAMMA22:
-                rgb = sRGBgamma22_lin(rgb);
-                break;
-            case INGAMMA24:
-                rgb = rec709gamma24_lin(rgb);
-                break;
-            case INGAMMA26:
-                rgb = dcip3gamma26_lin(rgb);
-                break;
-            case INFILM5:
-                rgb = gen5_lin(rgb);
-                break;
+        case INACESCC:
+            rgb = acescc_lin(rgb);
+            break;
+        case INACESCCT:
+            rgb = acescct_lin(rgb);
+            break;
+        case INAPPLELOG:
+            rgb = applelog_lin(rgb);
+            break;
+        case INLOGC3:
+            rgb = logC3_lin(rgb, ei);
+            break;
+        case INLOGC4:
+            rgb = logC4_lin(rgb);
+            break;
+        case INFILM5:
+            rgb = gen5_lin(rgb);
+            break;
+        case INCINEON:
+            rgb = cineon_lin(rgb);
+            break;
+        case INDWGINTERMEDIATE:
+            rgb = dwgintermediate_lin(rgb);
+            break;
+        case INGAMMA22:
+            rgb = gamma22_lin(rgb);
+            break;
+        case INGAMMA24:
+            rgb = gamma24_lin(rgb);
+            break;
+        case INGAMMA26:
+            rgb = gamma26_lin(rgb);
+            break;
+        case INREC709GAMMA:
+            rgb = rec709_lin(rgb);
+            break;
+        case INSRGBGAMMA:
+            rgb = sRGBgamma22_lin(rgb);
+            break;
         }
     }
+
+    // input colorspace
     if (mapcolorspace) {
         switch (inputcolorspace) {
-            case INACESAP0:
-                rgb = acesAP0_xyz(rgb);                
-                break;
-            case INACESAP1:
-                rgb = acesAP1_xyz(rgb);                
-                break;
-            case INLOGC3:
-                rgb = logC3_xyz(rgb);
-                break;
-            case INLOGC4:
-                rgb = logC4_xyz(rgb);
-                break;
-            case INDWG:
-                rgb = dwg_xyz(rgb);
-                break;
-            case INREC709:
-                rgb = rec709_xyz(rgb);
-                break;
-            case INSRGB:
-                rgb = sRGB_xyz(rgb);              
-                break;
-            case INDCIP3:
-                rgb = dcip3_xyz(rgb);                
-                break;
-            case INDCIP3D60:
-                rgb = dcip3d60_xyz(rgb);                
-                break;
-            case INDCIP3D65:
-                rgb = dcip3d65_xyz(rgb);                
-                break;
-            case INGEN5:
-                rgb = gen5_xyz(rgb);                
-                break;
+        case INACESAP0:
+            rgb = acesAP0_xyz(rgb);
+            break;
+        case INACESAP1:
+            rgb = acesAP1_xyz(rgb);
+            break;
+        case INAWGC3:
+            rgb = logC3_xyz(rgb);
+            break;
+        case INAWGC4:
+            rgb = logC4_xyz(rgb);
+            break;
+        case INGEN5:
+            rgb = gen5_xyz(rgb);
+            break;
+        case INDWG:
+            rgb = dwg_xyz(rgb);
+            break;
+        case INDCIP3D60:
+            rgb = dcip3d60_xyz(rgb);
+            break;
+        case INDCIP3D65:
+            rgb = dcip3d65_xyz(rgb);
+            break;
+        case INDCIP3:
+            rgb = dcip3_xyz(rgb);
+            break;
+        case INREC2020:
+            rgb = rec2020_xyz(rgb);
+            break;
+        case INREC709:
+            rgb = rec709_xyz(rgb);
+            break;
+        case INSRGB:
+            rgb = sRGB_xyz(rgb);
+            break;
         }
     }
-    // whitepoint
+
+    // whitepoint adaptation
     switch (whitepoint) {
         case WPD60D65:
             rgb = d60_d65_adaptation(rgb);
@@ -131,113 +155,132 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
             rgb = d65_d63_adaptation(rgb);
             break;
     }
-    // output transform
+
+    // output colorspace
     if (mapcolorspace) {
         switch (outputcolorspace) {
-            case OUTACESAP0:
-                rgb = xyz_acesAP0(rgb);
-                lumcoeff = acesAP0_y_lum_coeff();
-                break;
-            case OUTACESAP1:
-                rgb = xyz_acesAP1(rgb);
-                lumcoeff = acesAP1_y_lum_coeff();
-                break;
-            case OUTLOGC3:
-                rgb = xyz_logC3(rgb);
-                lumcoeff = logc3_y_lum_coeff();
-                break;
-            case OUTLOGC4:
-                rgb = xyz_logC4(rgb);
-                lumcoeff = logc4_y_lum_coeff();
-                break;
-            case OUTDWG:
-                rgb = xyz_dwg(rgb);
-                lumcoeff = dwg_y_lum_coeff();
-                break;
-            case OUTREC709:
-                rgb = xyz_rec709(rgb);
-                lumcoeff = rec709_y_lum_coeff();
-                break;
-            case OUTSRGB:
-                rgb = xyz_sRGB(rgb);
-                lumcoeff = sRGB_y_lum_coeff();
-                break;
-            case OUTDCIP3:
-                rgb = xyz_dcip3(rgb);
-                lumcoeff = dcip3_y_lum_coeff();
-                break;
-            case OUTDCIP3D60:
-                rgb = xyz_dcip3d60(rgb);
-                lumcoeff = dcip3d60_y_lum_coeff();
-                break;
-            case OUTDCIP3D65:
-                rgb = xyz_dcip3d65(rgb);
-                lumcoeff = dcip3d65_y_lum_coeff();
-                break;
-            case OUTGEN5:
-                rgb = xyz_gen5(rgb);
-                lumcoeff = gen5_y_lum_coeff();
-                break;
+        case OUTACESAP0:
+            rgb = xyz_acesAP0(rgb);
+            lumcoeff = acesAP0_y_lum_coeff();
+            break;
+        case OUTACESAP1:
+            rgb = xyz_acesAP1(rgb);
+            lumcoeff = acesAP1_y_lum_coeff();
+            break;
+        case OUTAWGC3:
+            rgb = xyz_logC3(rgb);
+            lumcoeff = logc3_y_lum_coeff();
+            break;
+        case OUTAWGC4:
+            rgb = xyz_logC4(rgb);
+            lumcoeff = logc4_y_lum_coeff();
+            break;
+        case OUTGEN5:
+            rgb = xyz_gen5(rgb);
+            lumcoeff = gen5_y_lum_coeff();
+            break;
+        case OUTDWG:
+            rgb = xyz_dwg(rgb);
+            lumcoeff = dwg_y_lum_coeff();
+            break;
+        case OUTDCIP3D60:
+            rgb = xyz_dcip3d60(rgb);
+            lumcoeff = dcip3d60_y_lum_coeff();
+            break;
+        case OUTDCIP3D65:
+            rgb = xyz_dcip3d65(rgb);
+            lumcoeff = dcip3d65_y_lum_coeff();
+            break;
+        case OUTDCIP3:
+            rgb = xyz_dcip3(rgb);
+            lumcoeff = dcip3_y_lum_coeff();
+            break;
+        case OUTREC2020:
+            rgb = xyz_rec2020(rgb);
+            lumcoeff = rec2020_y_lum_coeff();
+            break;
+        case OUTREC709:
+            rgb = xyz_rec709(rgb);
+            lumcoeff = rec709_y_lum_coeff();
+            break;
+        case OUTSRGB:
+            rgb = xyz_sRGB(rgb);
+            lumcoeff = sRGB_y_lum_coeff();
+            break;
         }
     }
-    // tone compress
+
+    // tone compression
     switch (tonecompress) {
-        case TCREINHARD:
-            rgb = tonecompress_reinhard_luma(rgb, lumcoeff, 1.0, 1.0);
-            break;
+    case TCREINHARD:
+        rgb = tonecompress_reinhard_luma(rgb, lumcoeff, 1.0f, 1.0f);
+        break;
     }
+
     // output gamma
     if (mapgamma) {
         switch (outputgamma) {
-            case OUTACESCC:
-                rgb = lin_acescc(rgb);
-                break;
-            case OUTACESCCT:
-                rgb = lin_acescct(rgb);
-                break;
-            case OUTLOGC3:
-                rgb = lin_logC3(rgb, ei);
-                break;
-            case OUTLOGC4:
-                rgb = lin_logC4(rgb);
-                break;
-            case OUTCINEON:
-                rgb = lin_cineon(rgb);
-                break;
-            case OUTDWGINTERMEDIATE:
-                rgb = lin_dwgintermediate(rgb);
-                break;
-            case OUTSRGBGAMMA22:
-                rgb = lin_sRGBgamma22(rgb);
-                break;
-            case OUTGAMMA24:
-                rgb = lin_rec709gamma24(rgb);
-                break;
-            case OUTGAMMA26:
-                rgb = lin_dcip3gamma26(rgb);
-                break;
-            case OUTFILM5:
-                rgb = lin_gen5(rgb);
-                break;
+        case OUTACESCC:
+            rgb = lin_acescc(rgb);
+            break;
+        case OUTACESCCT:
+            rgb = lin_acescct(rgb);
+            break;
+        case OUTAPPLELOG:
+            rgb = lin_applelog(rgb);
+            break;
+        case OUTLOGC3:
+            rgb = lin_logC3(rgb, ei);
+            break;
+        case OUTLOGC4:
+            rgb = lin_logC4(rgb);
+            break;
+        case OUTFILM5:
+            rgb = lin_gen5(rgb);
+            break;
+        case OUTCINEON:
+            rgb = lin_cineon(rgb);
+            break;
+        case OUTDWGINTERMEDIATE:
+            rgb = lin_dwgintermediate(rgb);
+            break;
+        case OUTGAMMA22:
+            rgb = lin_gamma22(rgb);
+            break;
+        case OUTGAMMA24:
+            rgb = lin_gamma24(rgb);
+            break;
+        case OUTGAMMA26:
+            rgb = lin_gamma26(rgb);
+            break;
+        case OUTREC709GAMMA:
+            rgb = lin_rec709(rgb);
+            break;
+        case OUTSRGBGAMMA:
+            rgb = lin_sRGBgamma22(rgb);
+            break;
         }
     }
-    // tone ootf
-    switch (toneootf) {
-        case OFDCIP3REC709:
-            rgb = tonemap_ootf_dcip3_rec709(rgb);
+
+    // tone contrast
+    switch (tonecontrast) {
+        case TCTGAMMA26REC709:
+            rgb = tonemap_contrast_gamma26_rec709(rgb);
             break;
-        case OFSRGBREC709:
-            rgb = tonemap_ootf_sRGB_rec709(rgb);
+        case TCTSRGBREC709:
+            rgb = tonemap_contrast_sRGB_rec709(rgb);
             break;
-        case OFREC709SRGB:
-            rgb = tonemap_ootf_rec709_sRGB(rgb);
+        case TCTREC709SRGB:
+            rgb = tonemap_contrast_rec709_sRGB(rgb);
             break;
-        case OFREC709DCIP3:
-            rgb = tonemap_ootf_rec709_dcip3(rgb);
+        case TCTREC709GAMMA26:
+            rgb = tonemap_contrast_rec709_gamma26(rgb);
             break;
     }
+
     if (adjustdisplay) {
         rgb = adjust_display(rgb);
     }
+
     return rgb;
 }

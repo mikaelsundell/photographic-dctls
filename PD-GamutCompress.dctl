@@ -5,11 +5,11 @@
 // Luma-axis gamut compression with selectable color space coefficients.
 
 // clang-format off
-DEFINE_UI_PARAMS(colorspace, Colorspace, DCTLUI_COMBO_BOX, 6, {XYZ, ACESAP0, ACESAP1, AWGC3, AWGC4, DWG, REC709, SRGB, DCIP3D60, DCIP3, DCIP3D65, GEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
+DEFINE_UI_PARAMS(colorspace, Colorspace, DCTLUI_COMBO_BOX, 6, {XYZ, ACESAP0, ACESAP1, AWGC3, AWGC4, DWG, REC709, REC2020, SRGB, DCIP3D60, DCIP3, DCIP3D65, GEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, Rec2020 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(compression_knee, Compression Knee, DCTLUI_SLIDER_FLOAT, 0.90, 0.0, 1.0, 0.001)
-DEFINE_UI_PARAMS(compression_max,  Compression Max,  DCTLUI_SLIDER_FLOAT, 1.00, 0.0, 1.2, 0.001)
-DEFINE_UI_PARAMS(adjustdisplay,    Adjust for display, DCTLUI_CHECK_BOX, 0)
+DEFINE_UI_PARAMS(compression_max, Compression Max, DCTLUI_SLIDER_FLOAT, 1.00, 0.0, 1.2, 0.001)
+DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 
 // clang-format on
 #include "PD-Common.h"
@@ -18,7 +18,7 @@ DEFINE_UI_PARAMS(adjustdisplay,    Adjust for display, DCTLUI_CHECK_BOX, 0)
 #include "PD-DCIP3.h"
 #include "PD-Gen5.h"
 #include "PD-LogC.h"
-#include "PD-Rec709.h"
+#include "PD-Rec.h"
 #include "PD-sRGB.h"
 
 struct GamutCompressParams
@@ -49,6 +49,8 @@ __DEVICE__ float3 gamut_luma_coeff(struct GamutCompressParams params)
             return dwg_y_lum_coeff();
         case REC709:
             return rec709_y_lum_coeff();
+        case REC2020:
+            return rec2020_y_lum_coeff();
         case SRGB:
             return sRGB_y_lum_coeff();
         case DCIP3D60:
@@ -131,7 +133,7 @@ __DEVICE__ float3 compress_gamut(float3 rgb, float knee, float maxRatio, struct 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
-    
+
     struct GamutCompressParams params;
     params.colorspace = colorspace;
 

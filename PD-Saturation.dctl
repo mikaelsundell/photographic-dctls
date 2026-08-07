@@ -6,20 +6,22 @@
 
 // clang-format off
 DEFINE_UI_PARAMS(saturation, Saturation, DCTLUI_SLIDER_FLOAT, 50, 0, 100, 1)
-DEFINE_UI_PARAMS(lumaaxis, Luma axis, DCTLUI_COMBO_BOX, 6, {XYZ, ACESAP0, ACESAP1, AWGC3, AWGC4, DWG, REC709, SRGB, DCIP3D60, DCIP3, DCIP3D65, GEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
-DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_COMBO_BOX, 0, {LIN, ACESCC, ACESCCT, LOGC3, LOGC4, CINEON, DWGINTERMEDIATE, SRGBGAMMA22, GAMMA24, GAMMA26, FILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, DaVinci Intermediate, sRGB/Gamma2.2, Rec709/Gamma2.4, DCI-P3/Gamma2.6, Blackmagic Film})
+DEFINE_UI_PARAMS(lumaaxis, Luma axis, DCTLUI_COMBO_BOX, 6, {XYZ, ACESAP0, ACESAP1, AWGC3, AWGC4, DWG, REC709, REC2020, SRGB, DCIP3D60, DCIP3, DCIP3D65, GEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, Rec2020 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
+DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_COMBO_BOX, 0, {LIN, ACESCC, ACESCCT, LOGC3, LOGC4, CINEON, DWGINTERMEDIATE, APPLELOG, GAMMA22, GAMMA24, GAMMA26, REC709GAMMA, SRGBGAMMA, FILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, DaVinci Intermediate, Apple Log, Gamma2.2, Gamma2.4, Gamma2.6, Rec709, sRGB, Blackmagic Film})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 
 // clang-format on
 #include "PD-Common.h"
 #include "PD-Aces.h"
+#include "PD-Apple.h"
 #include "PD-Cineon.h"
 #include "PD-DWG.h"
 #include "PD-DCIP3.h"
+#include "PD-Gamma.h"
 #include "PD-Gen5.h"
 #include "PD-LogC.h"
-#include "PD-Rec709.h"
+#include "PD-Rec.h"
 #include "PD-sRGB.h"
 
 struct SaturationYParams
@@ -41,38 +43,47 @@ __DEVICE__ float saturation_factor(float value)
 __DEVICE__ float3 gamma_to_lin(float3 rgb, struct SaturationYParams params)
 {
     switch (params.gamma) {
-        case LIN:
-            break;
-        case ACESCC:
-            rgb = acescc_lin(rgb);
-            break;
-        case ACESCCT:
-            rgb = acescct_lin(rgb);
-            break;
-        case LOGC3:
-            rgb = logC3_lin(rgb, params.ei);
-            break;
-        case LOGC4:
-            rgb = logC4_lin(rgb);
-            break;
-        case CINEON:
-            rgb = cineon_lin(rgb);
-            break;
-        case DWGINTERMEDIATE:
-            rgb = dwgintermediate_lin(rgb);
-            break;
-        case SRGBGAMMA22:
-            rgb = sRGBgamma22_lin(rgb);
-            break;
-        case GAMMA24:
-            rgb = rec709gamma24_lin(rgb);
-            break;
-        case GAMMA26:
-            rgb = dcip3gamma26_lin(rgb);
-            break;
-        case FILM5:
-            rgb = gen5_lin(rgb);
-            break;
+    case LIN:
+        break;
+    case ACESCC:
+        rgb = acescc_lin(rgb);
+        break;
+    case ACESCCT:
+        rgb = acescct_lin(rgb);
+        break;
+    case LOGC3:
+        rgb = logC3_lin(rgb, params.ei);
+        break;
+    case LOGC4:
+        rgb = logC4_lin(rgb);
+        break;
+    case CINEON:
+        rgb = cineon_lin(rgb);
+        break;
+    case DWGINTERMEDIATE:
+        rgb = dwgintermediate_lin(rgb);
+        break;
+    case APPLELOG:
+        rgb = applelog_lin(rgb);
+        break;
+    case GAMMA22:
+        rgb = gamma22_lin(rgb);
+        break;
+    case GAMMA24:
+        rgb = gamma24_lin(rgb);
+        break;
+    case GAMMA26:
+        rgb = gamma26_lin(rgb);
+        break;
+    case REC709GAMMA:
+        rgb = rec709_lin(rgb);
+        break;
+    case SRGBGAMMA:
+        rgb = sRGBgamma22_lin(rgb);
+        break;
+    case FILM5:
+        rgb = gen5_lin(rgb);
+        break;
     }
 
     return rgb;
@@ -81,69 +92,81 @@ __DEVICE__ float3 gamma_to_lin(float3 rgb, struct SaturationYParams params)
 __DEVICE__ float3 lin_to_gamma(float3 rgb, struct SaturationYParams params)
 {
     switch (params.gamma) {
-        case LIN:
-            break;
-        case ACESCC:
-            rgb = lin_acescc(rgb);
-            break;
-        case ACESCCT:
-            rgb = lin_acescct(rgb);
-            break;
-        case LOGC3:
-            rgb = lin_logC3(rgb, params.ei);
-            break;
-        case LOGC4:
-            rgb = lin_logC4(rgb);
-            break;
-        case CINEON:
-            rgb = lin_cineon(rgb);
-            break;
-        case DWGINTERMEDIATE:
-            rgb = lin_dwgintermediate(rgb);
-            break;
-        case SRGBGAMMA22:
-            rgb = lin_sRGBgamma22(rgb);
-            break;
-        case GAMMA24:
-            rgb = lin_rec709gamma24(rgb);
-            break;
-        case GAMMA26:
-            rgb = lin_dcip3gamma26(rgb);
-            break;
-        case FILM5:
-            rgb = lin_gen5(rgb);
-            break;
+    case LIN:
+        break;
+    case ACESCC:
+        rgb = lin_acescc(rgb);
+        break;
+    case ACESCCT:
+        rgb = lin_acescct(rgb);
+        break;
+    case LOGC3:
+        rgb = lin_logC3(rgb, params.ei);
+        break;
+    case LOGC4:
+        rgb = lin_logC4(rgb);
+        break;
+    case CINEON:
+        rgb = lin_cineon(rgb);
+        break;
+    case DWGINTERMEDIATE:
+        rgb = lin_dwgintermediate(rgb);
+        break;
+    case APPLELOG:
+        rgb = lin_applelog(rgb);
+        break;
+    case GAMMA22:
+        rgb = lin_gamma22(rgb);
+        break;
+    case GAMMA24:
+        rgb = lin_gamma24(rgb);
+        break;
+    case GAMMA26:
+        rgb = lin_gamma26(rgb);
+        break;
+    case REC709GAMMA:
+        rgb = lin_rec709(rgb);
+        break;
+    case SRGBGAMMA:
+        rgb = lin_sRGBgamma22(rgb);
+        break;
+    case FILM5:
+        rgb = lin_gen5(rgb);
+        break;
     }
+
     return rgb;
 }
 
 __DEVICE__ float3 luma_coefficients(struct SaturationYParams params)
 {
     switch (params.lumaaxis) {
-        case XYZ:
-            return make_float3(0.0f, 1.0f, 0.0f);
-        case ACESAP0:
-            return acesAP0_y_lum_coeff();
-        case ACESAP1:
-            return acesAP1_y_lum_coeff();
-        case AWGC3:
-            return logc3_y_lum_coeff();
-        case AWGC4:
-            return logc4_y_lum_coeff();
-        case DWG:
-            return dwg_y_lum_coeff();
-        case REC709:
-            return rec709_y_lum_coeff();
-        case SRGB:
-            return sRGB_y_lum_coeff();
-        case DCIP3D60:
-            return dcip3d60_y_lum_coeff();
-        case DCIP3:
-            return dcip3_y_lum_coeff();
-        case DCIP3D65:
-            return dcip3d65_y_lum_coeff();
-        case GEN5:
-            return gen5_y_lum_coeff();
+    case XYZ:
+        return make_float3(0.0f, 1.0f, 0.0f);
+    case ACESAP0:
+        return acesAP0_y_lum_coeff();
+    case ACESAP1:
+        return acesAP1_y_lum_coeff();
+    case AWGC3:
+        return logc3_y_lum_coeff();
+    case AWGC4:
+        return logc4_y_lum_coeff();
+    case DWG:
+        return dwg_y_lum_coeff();
+    case REC709:
+        return rec709_y_lum_coeff();
+    case REC2020:
+        return rec2020_y_lum_coeff();
+    case SRGB:
+        return sRGB_y_lum_coeff();
+    case DCIP3D60:
+        return dcip3d60_y_lum_coeff();
+    case DCIP3:
+        return dcip3_y_lum_coeff();
+    case DCIP3D65:
+        return dcip3d65_y_lum_coeff();
+    case GEN5:
+        return gen5_y_lum_coeff();
     }
 
     return rec709_y_lum_coeff();
@@ -156,10 +179,7 @@ __DEVICE__ float3 saturation_y(float3 rgb, float saturationValue, struct Saturat
 
     float Y = rgb.x * coeff.x + rgb.y * coeff.y + rgb.z * coeff.z;
 
-    return make_float3(
-        Y + (rgb.x - Y) * sat,
-        Y + (rgb.y - Y) * sat,
-        Y + (rgb.z - Y) * sat);
+    return make_float3(Y + (rgb.x - Y) * sat, Y + (rgb.y - Y) * sat, Y + (rgb.z - Y) * sat);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)

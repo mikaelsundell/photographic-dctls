@@ -100,7 +100,7 @@ __DEVICE__ float3
 AcesColorspace_aces_xyz(struct AcesColorspace cs, float3 acesAP0)
 {
     return mult_matrix(acesAP0, cs.xyz_matrix);
-}
+}   
 
 __DEVICE__ struct AcesCurve
 aces_curve()

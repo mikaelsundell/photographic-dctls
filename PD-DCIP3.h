@@ -26,9 +26,7 @@ __DEVICE__ struct DCIP3Colorspace
 dcip3_colorspace()
 {
     struct DCIP3Colorspace cs;
-
     // colortool --inputcolorspace DCIP3 -v
-
     // convert xyz to dcip3 D63 matrix
     cs.dcip3_matrix.m00 = 2.7253940f;
     cs.dcip3_matrix.m01 = -1.0180030f;

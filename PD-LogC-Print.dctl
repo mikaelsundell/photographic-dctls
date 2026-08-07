@@ -32,7 +32,7 @@ DEFINE_LUT(LUT5_DCIP3, ../Film Looks/DCI-P3 Kodak 2383 D65.cube)
 #include "PD-Common.h"
 #include "PD-LogC.h"
 #include "PD-Cineon.h"
-#include "PD-Rec709.h"
+#include "PD-Rec.h"
 #include "PD-DCIP3.h"
 
 struct PrintParams
