@@ -4,31 +4,6 @@
 
 // clang-format on
 
-// dcip3 curve
-struct DCIP3Curve {
-    float exp;
-};
-
-__DEVICE__ struct DCIP3Curve
-dcip3_curve()
-{
-    struct DCIP3Curve cv;
-    cv.exp = 2.6f;
-    return cv;
-}
-
-__DEVICE__ float
-DCIP3Curve_lin_dcip3(struct DCIP3Curve cv, float lin)
-{
-    return pow_f(lin, 1 / cv.exp);
-}
-
-__DEVICE__ float
-DCIP3Curve_dcip3_lin(struct DCIP3Curve cv, float val)
-{
-    return pow_f(val, cv.exp);
-}
-
 // dcip3 colorspace
 struct DCIP3Colorspace {
     struct Matrix dcip3_matrix;
@@ -40,6 +15,7 @@ DCIP3Colorspace_xyz_dcip3(struct DCIP3Colorspace cs, float3 xyz)
 {
     return mult_matrix(xyz, cs.dcip3_matrix);
 }
+
 __DEVICE__ float3
 DCIP3Colorspace_dcip3_xyz(struct DCIP3Colorspace cs, float3 dcip3)
 {
@@ -50,7 +26,9 @@ __DEVICE__ struct DCIP3Colorspace
 dcip3_colorspace()
 {
     struct DCIP3Colorspace cs;
+
     // colortool --inputcolorspace DCIP3 -v
+
     // convert xyz to dcip3 D63 matrix
     cs.dcip3_matrix.m00 = 2.7253940f;
     cs.dcip3_matrix.m01 = -1.0180030f;
@@ -61,6 +39,7 @@ dcip3_colorspace()
     cs.dcip3_matrix.m06 = 0.0412419f;
     cs.dcip3_matrix.m07 = -0.0876390f;
     cs.dcip3_matrix.m08 = 1.1009294f;
+
     // convert dcip3 D63 to xyz matrix
     cs.xyz_matrix.m00 = 0.4451698f;
     cs.xyz_matrix.m01 = 0.2771344f;
@@ -71,6 +50,7 @@ dcip3_colorspace()
     cs.xyz_matrix.m06 = 0.0000000f;
     cs.xyz_matrix.m07 = 0.0470606f;
     cs.xyz_matrix.m08 = 0.9073554f;
+
     return cs;
 }
 
@@ -149,24 +129,6 @@ dcip3d65_y_lum_coeff()
 {
     struct DCIP3Colorspace cs = dcip3d65_colorspace();
     return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
-}
-
-// convert linear to dcip3
-__DEVICE__ float3
-lin_dcip3gamma26(float3 rgb)
-{
-    struct DCIP3Curve cv = dcip3_curve();
-    return make_float3(DCIP3Curve_lin_dcip3(cv, rgb.x), DCIP3Curve_lin_dcip3(cv, rgb.y),
-                       DCIP3Curve_lin_dcip3(cv, rgb.z));
-}
-
-// convert dcip3 to linear
-__DEVICE__ float3
-dcip3gamma26_lin(float3 rgb)
-{
-    struct DCIP3Curve cv = dcip3_curve();
-    return make_float3(DCIP3Curve_dcip3_lin(cv, rgb.x), DCIP3Curve_dcip3_lin(cv, rgb.y),
-                       DCIP3Curve_dcip3_lin(cv, rgb.z));
 }
 
 // convert xyz to dcip3

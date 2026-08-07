@@ -28,26 +28,14 @@ rec709_curve()
 __DEVICE__ float
 Rec709Curve_lin_rec709(struct Rec709Curve cv, float lin)
 {
-    return (lin < cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, 1 / cv.exp) - cv.offset);
+    return (lin < cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, 1.0f / cv.exp) - cv.offset);
 }
 
 __DEVICE__ float
 Rec709Curve_rec709_lin(struct Rec709Curve cv, float val)
 {
-    return (val < Rec709Curve_lin_rec709(cv, cv.threshold)) ? (val / cv.slope) : pow_f((val + cv.offset) / cv.scale, cv.exp);
-}
-
-// gamma curve
-__DEVICE__ float
-GammaCurve_lin_gamma(float lin, float gamma)
-{
-    return pow_f(max_f(lin, 0.0f), 1.0f / gamma);
-}
-
-__DEVICE__ float
-GammaCurve_gamma_lin(float val, float gamma)
-{
-    return pow_f(max_f(val, 0.0f), gamma);
+    return (val < Rec709Curve_lin_rec709(cv, cv.threshold)) ? (val / cv.slope)
+                                                            : pow_f((val + cv.offset) / cv.scale, cv.exp);
 }
 
 // rec709 colorspace
@@ -72,7 +60,9 @@ __DEVICE__ struct Rec709Colorspace
 rec709_colorspace()
 {
     struct Rec709Colorspace cs;
+
     // colortool --inputcolorspace Rec709 -v
+
     // convert xyz to rec709 matrix
     cs.rec709_matrix.m00 = 3.2406f;
     cs.rec709_matrix.m01 = -1.5372f;
@@ -83,6 +73,7 @@ rec709_colorspace()
     cs.rec709_matrix.m06 = 0.0557f;
     cs.rec709_matrix.m07 = -0.2040f;
     cs.rec709_matrix.m08 = 1.0570f;
+
     // convert rec709 to xyz matrix
     cs.xyz_matrix.m00 = 0.4124f;
     cs.xyz_matrix.m01 = 0.3576f;
@@ -93,6 +84,7 @@ rec709_colorspace()
     cs.xyz_matrix.m06 = 0.0193f;
     cs.xyz_matrix.m07 = 0.1192f;
     cs.xyz_matrix.m08 = 0.9505f;
+
     return cs;
 }
 
@@ -125,7 +117,9 @@ __DEVICE__ struct Rec2020Colorspace
 rec2020_colorspace()
 {
     struct Rec2020Colorspace cs;
+
     // colortool --inputcolorspace Rec2020 -v
+
     // convert xyz to rec2020 matrix
     cs.rec2020_matrix.m00 = 1.716651f;
     cs.rec2020_matrix.m01 = -0.355671f;
@@ -136,6 +130,7 @@ rec2020_colorspace()
     cs.rec2020_matrix.m06 = 0.017640f;
     cs.rec2020_matrix.m07 = -0.042771f;
     cs.rec2020_matrix.m08 = 0.942103f;
+
     // convert rec2020 to xyz matrix
     cs.xyz_matrix.m00 = 0.636958f;
     cs.xyz_matrix.m01 = 0.144617f;
@@ -146,6 +141,7 @@ rec2020_colorspace()
     cs.xyz_matrix.m06 = 0.000000f;
     cs.xyz_matrix.m07 = 0.028073f;
     cs.xyz_matrix.m08 = 1.060985f;
+
     return cs;
 }
 
@@ -161,7 +157,8 @@ __DEVICE__ float3
 lin_rec709(float3 rgb)
 {
     struct Rec709Curve cv = rec709_curve();
-    return make_float3(Rec709Curve_lin_rec709(cv, rgb.x), Rec709Curve_lin_rec709(cv, rgb.y), Rec709Curve_lin_rec709(cv, rgb.z));
+    return make_float3(Rec709Curve_lin_rec709(cv, rgb.x), Rec709Curve_lin_rec709(cv, rgb.y),
+                       Rec709Curve_lin_rec709(cv, rgb.z));
 }
 
 // convert rec709 to linear
@@ -169,49 +166,8 @@ __DEVICE__ float3
 rec709_lin(float3 rgb)
 {
     struct Rec709Curve cv = rec709_curve();
-    return make_float3(Rec709Curve_rec709_lin(cv, rgb.x), Rec709Curve_rec709_lin(cv, rgb.y), Rec709Curve_rec709_lin(cv, rgb.z));
-}
-
-// convert linear to gamma 2.2
-__DEVICE__ float3
-lin_gamma22(float3 rgb)
-{
-    return make_float3(GammaCurve_lin_gamma(rgb.x, 2.2f), GammaCurve_lin_gamma(rgb.y, 2.2f), GammaCurve_lin_gamma(rgb.z, 2.2f));
-}
-
-// convert gamma 2.2 to linear
-__DEVICE__ float3
-gamma22_lin(float3 rgb)
-{
-    return make_float3(GammaCurve_gamma_lin(rgb.x, 2.2f), GammaCurve_gamma_lin(rgb.y, 2.2f), GammaCurve_gamma_lin(rgb.z, 2.2f));
-}
-
-// convert linear to gamma 2.4
-__DEVICE__ float3
-lin_gamma24(float3 rgb)
-{
-    return make_float3(GammaCurve_lin_gamma(rgb.x, 2.4f), GammaCurve_lin_gamma(rgb.y, 2.4f), GammaCurve_lin_gamma(rgb.z, 2.4f));
-}
-
-// convert gamma 2.4 to linear
-__DEVICE__ float3
-gamma24_lin(float3 rgb)
-{
-    return make_float3(GammaCurve_gamma_lin(rgb.x, 2.4f), GammaCurve_gamma_lin(rgb.y, 2.4f), GammaCurve_gamma_lin(rgb.z, 2.4f));
-}
-
-// convert linear to gamma 2.6
-__DEVICE__ float3
-lin_gamma26(float3 rgb)
-{
-    return make_float3(GammaCurve_lin_gamma(rgb.x, 2.6f), GammaCurve_lin_gamma(rgb.y, 2.6f), GammaCurve_lin_gamma(rgb.z, 2.6f));
-}
-
-// convert gamma 2.6 to linear
-__DEVICE__ float3
-gamma26_lin(float3 rgb)
-{
-    return make_float3(GammaCurve_gamma_lin(rgb.x, 2.6f), GammaCurve_gamma_lin(rgb.y, 2.6f), GammaCurve_gamma_lin(rgb.z, 2.6f));
+    return make_float3(Rec709Curve_rec709_lin(cv, rgb.x), Rec709Curve_rec709_lin(cv, rgb.y),
+                       Rec709Curve_rec709_lin(cv, rgb.z));
 }
 
 // convert xyz to rec709
