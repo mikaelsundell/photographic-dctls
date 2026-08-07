@@ -18,12 +18,12 @@ __DEVICE__ struct DWGCurve
 dwg_curve()
 {
     struct DWGCurve cv;
-    cv.a = 0.0075;
-    cv.b = 7.0;
-    cv.c = 0.07329248;
-    cv.m = 10.44426855;
-    cv.lin_cut = 0.00262409;
-    cv.log_cut = 0.02740668;
+    cv.a = 0.0075f;
+    cv.b = 7.0f;
+    cv.c = 0.07329248f;
+    cv.m = 10.44426855f;
+    cv.lin_cut = 0.00262409f;
+    cv.log_cut = 0.02740668f;
     return cv;
 }
 
@@ -62,25 +62,25 @@ dwg_colorspace()
     struct DWGColorspace cs;
     // colortool --inputcolorspace DWG -v
     // convert xyz to dwg matrix
-    cs.dwg_matrix.m00 = 1.516672;
-    cs.dwg_matrix.m01 = -0.281478;
-    cs.dwg_matrix.m02 = -0.146964;
-    cs.dwg_matrix.m03 = -0.464917;
-    cs.dwg_matrix.m04 = 1.251424;
-    cs.dwg_matrix.m05 = 0.174885;
-    cs.dwg_matrix.m06 = 0.064849;
-    cs.dwg_matrix.m07 = 0.109139;
-    cs.dwg_matrix.m08 = 0.761415;
+    cs.dwg_matrix.m00 = 1.516672f;
+    cs.dwg_matrix.m01 = -0.281478f;
+    cs.dwg_matrix.m02 = -0.146964f;
+    cs.dwg_matrix.m03 = -0.464917f;
+    cs.dwg_matrix.m04 = 1.251424f;
+    cs.dwg_matrix.m05 = 0.174885f;
+    cs.dwg_matrix.m06 = 0.064849f;
+    cs.dwg_matrix.m07 = 0.109139f;
+    cs.dwg_matrix.m08 = 0.761415f;
     // convert dwg to xyz matrix
-    cs.xyz_matrix.m00 = 0.700622;
-    cs.xyz_matrix.m01 = 0.148775;
-    cs.xyz_matrix.m02 = 0.101059;
-    cs.xyz_matrix.m03 = 0.274119;
-    cs.xyz_matrix.m04 = 0.873632;
-    cs.xyz_matrix.m05 = -0.147750;
-    cs.xyz_matrix.m06 = -0.098963;
-    cs.xyz_matrix.m07 = -0.137895;
-    cs.xyz_matrix.m08 = 1.325916;
+    cs.xyz_matrix.m00 = 0.700622f;
+    cs.xyz_matrix.m01 = 0.148775f;
+    cs.xyz_matrix.m02 = 0.101059f;
+    cs.xyz_matrix.m03 = 0.274119f;
+    cs.xyz_matrix.m04 = 0.873632f;
+    cs.xyz_matrix.m05 = -0.147750f;
+    cs.xyz_matrix.m06 = -0.098963f;
+    cs.xyz_matrix.m07 = -0.137895f;
+    cs.xyz_matrix.m08 = 1.325916f;
     return cs;
 }
 

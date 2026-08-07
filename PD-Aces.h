@@ -9,11 +9,12 @@ struct AcesCurve {};
 
 // acesAP0cc curve
 struct AcesccCurve {
-    float a;
-    float b;
-    float t;
-    float ls;
-    float lo;
+    float lin_cut;
+    float log_cut;
+    float min;
+    float offset;
+    float scale;
+    float toe;
 };
 
 // acesAP0cct curve
@@ -40,24 +41,24 @@ __DEVICE__ float
 AcesccCurve_lin_acescc(struct AcesccCurve cv, float lin)
 {
     if (lin <= 0.0f) {
-        return -0.3584474886f;
+        return cv.min;
     }
-    else if (lin < exp2_f(-15.0f)) {
-        return (log2_f(_exp2f(-16.0f) + lin * 0.5f) + 9.72f) / 17.52f;
+    else if (lin < cv.lin_cut) {
+        return (log2_f(cv.toe + lin * 0.5f) + cv.offset) / cv.scale;
     }
     else {
-        return (log2_f(lin) + 9.72f) / 17.52f;
+        return (log2_f(lin) + cv.offset) / cv.scale;
     }
 }
 
 __DEVICE__ float
 AcesccCurve_acescc_lin(struct AcesccCurve cv, float log)
 {
-    if (log < -0.3013698630f) {
-        return (exp2_f(log * 17.52f - 9.72f) - exp2_f(-16.0f)) * 2.0f;
+    if (log < cv.log_cut) {
+        return (exp2_f(log * cv.scale - cv.offset) - cv.toe) * 2.0f;
     }
     else {
-        return exp2_f(log * 17.52f - 9.72f);
+        return exp2_f(log * cv.scale - cv.offset);
     }
 }
 
@@ -112,6 +113,12 @@ __DEVICE__ struct AcesccCurve
 acescc_curve()
 {
     struct AcesccCurve cv;
+    cv.lin_cut = exp2_f(-15.0f);
+    cv.log_cut = -0.3013698630f;
+    cv.min = -0.3584474886f;
+    cv.offset = 9.72f;
+    cv.scale = 17.52f;
+    cv.toe = exp2_f(-16.0f);
     return cv;
 }
 
@@ -132,25 +139,25 @@ acesAP0_colorspace()
     struct AcesColorspace cs;
     // colortool --inputcolorspace AP0 -v
     // convert xyz to acesAP0 matrix
-    cs.aces_matrix.m00 = 1.0498110175;
-    cs.aces_matrix.m01 = 0.000000000;
-    cs.aces_matrix.m02 = -0.0000974845;
-    cs.aces_matrix.m03 = -0.4959030231;
-    cs.aces_matrix.m04 = 1.3733130458;
-    cs.aces_matrix.m05 = 0.0982400361;
-    cs.aces_matrix.m06 = 0.0000000000;
-    cs.aces_matrix.m07 = 0.0000000000;
-    cs.aces_matrix.m08 = 0.9912520182;
+    cs.aces_matrix.m00 = 1.0498110175f;
+    cs.aces_matrix.m01 = 0.000000000f;
+    cs.aces_matrix.m02 = -0.0000974845f;
+    cs.aces_matrix.m03 = -0.4959030231f;
+    cs.aces_matrix.m04 = 1.3733130458f;
+    cs.aces_matrix.m05 = 0.0982400361f;
+    cs.aces_matrix.m06 = 0.0000000000f;
+    cs.aces_matrix.m07 = 0.0000000000f;
+    cs.aces_matrix.m08 = 0.9912520182f;
     // convert acesAP0 to xyz matrix
-    cs.xyz_matrix.m00 = 0.9525523959;
-    cs.xyz_matrix.m01 = 0.0000000000;
-    cs.xyz_matrix.m02 = 0.0000936786;
-    cs.xyz_matrix.m03 = 0.3439664498;
-    cs.xyz_matrix.m04 = 0.7281660966;
-    cs.xyz_matrix.m05 = -0.0721325464;
-    cs.xyz_matrix.m06 = 0.0000000000;
-    cs.xyz_matrix.m07 = 0.0000000000;
-    cs.xyz_matrix.m08 = 1.0088251844;
+    cs.xyz_matrix.m00 = 0.9525523959f;
+    cs.xyz_matrix.m01 = 0.0000000000f;
+    cs.xyz_matrix.m02 = 0.0000936786f;
+    cs.xyz_matrix.m03 = 0.3439664498f;
+    cs.xyz_matrix.m04 = 0.7281660966f;
+    cs.xyz_matrix.m05 = -0.0721325464f;
+    cs.xyz_matrix.m06 = 0.0000000000f;
+    cs.xyz_matrix.m07 = 0.0000000000f;
+    cs.xyz_matrix.m08 = 1.0088251844f;
     return cs;
 }
 
@@ -167,25 +174,25 @@ acesAP1_colorspace()
     struct AcesColorspace cs;
     // colortool --inputcolorspace AP1 -v
     // convert xyz to acesAP1 matrix
-    cs.aces_matrix.m00 = 1.641023;
-    cs.aces_matrix.m01 = -0.324803;
-    cs.aces_matrix.m02 = -0.236425;
-    cs.aces_matrix.m03 = -0.663663;
-    cs.aces_matrix.m04 = 1.615332;
-    cs.aces_matrix.m05 = 0.016756;
-    cs.aces_matrix.m06 = 0.011722;
-    cs.aces_matrix.m07 = -0.008284;
-    cs.aces_matrix.m08 = 0.98839;
+    cs.aces_matrix.m00 = 1.641023f;
+    cs.aces_matrix.m01 = -0.324803f;
+    cs.aces_matrix.m02 = -0.236425f;
+    cs.aces_matrix.m03 = -0.663663f;
+    cs.aces_matrix.m04 = 1.615332f;
+    cs.aces_matrix.m05 = 0.016756f;
+    cs.aces_matrix.m06 = 0.011722f;
+    cs.aces_matrix.m07 = -0.008284f;
+    cs.aces_matrix.m08 = 0.98839f;
     // convert acesAP1 to xyz matrix
-    cs.xyz_matrix.m00 = 0.662454;
-    cs.xyz_matrix.m01 = 0.134004;
-    cs.xyz_matrix.m02 = 0.156188;
-    cs.xyz_matrix.m03 = 0.272229;
-    cs.xyz_matrix.m04 = 0.674082;
-    cs.xyz_matrix.m05 = 0.053690;
-    cs.xyz_matrix.m06 = -0.005575;
-    cs.xyz_matrix.m07 = 0.004061;
-    cs.xyz_matrix.m08 = 1.010339;
+    cs.xyz_matrix.m00 = 0.662454f;
+    cs.xyz_matrix.m01 = 0.134004f;
+    cs.xyz_matrix.m02 = 0.156188f;
+    cs.xyz_matrix.m03 = 0.272229f;
+    cs.xyz_matrix.m04 = 0.674082f;
+    cs.xyz_matrix.m05 = 0.053690f;
+    cs.xyz_matrix.m06 = -0.005575f;
+    cs.xyz_matrix.m07 = 0.004061f;
+    cs.xyz_matrix.m08 = 1.010339f;
     return cs;
 }
 

@@ -17,18 +17,18 @@ __DEVICE__ struct sRGBCurve
 sRGB_curve()
 {
     struct sRGBCurve cv;
-    cv.threshold = 0.0031308;
-    cv.slope = 12.92;
-    cv.exp = 2.4;
-    cv.scale = 1.055;
-    cv.offset = 0.055;
+    cv.threshold = 0.0031308f;
+    cv.slope = 12.92f;
+    cv.exp = 2.4f;
+    cv.scale = 1.055f;
+    cv.offset = 0.055f;
     return cv;
 }
 
 __DEVICE__ float
 sRGBCurve_lin_sRGB(struct sRGBCurve cv, float lin)
 {
-    return (lin <= cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, 1.0 / cv.exp)) - cv.offset;
+    return (lin <= cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, 1.0f / cv.exp)) - cv.offset;
 }
 
 __DEVICE__ float
@@ -61,25 +61,25 @@ sRGB_colorspace()
     struct sRGBColorspace cs;
     // colortool --inputcolorspace sRGB -v
     // convert from xyz to sRGB matrix
-    cs.sRGB_matrix.m00 = 3.2406;
-    cs.sRGB_matrix.m01 = -1.5372;
-    cs.sRGB_matrix.m02 = -0.4986;
-    cs.sRGB_matrix.m03 = -0.9689;
-    cs.sRGB_matrix.m04 = 1.8758;
-    cs.sRGB_matrix.m05 = 0.0415;
-    cs.sRGB_matrix.m06 = 0.0557;
-    cs.sRGB_matrix.m07 = -0.2040;
-    cs.sRGB_matrix.m08 = 1.0570;
+    cs.sRGB_matrix.m00 = 3.2406f;
+    cs.sRGB_matrix.m01 = -1.5372f;
+    cs.sRGB_matrix.m02 = -0.4986f;
+    cs.sRGB_matrix.m03 = -0.9689f;
+    cs.sRGB_matrix.m04 = 1.8758f;
+    cs.sRGB_matrix.m05 = 0.0415f;
+    cs.sRGB_matrix.m06 = 0.0557f;
+    cs.sRGB_matrix.m07 = -0.2040f;
+    cs.sRGB_matrix.m08 = 1.0570f;
     // convert sRGB to xyz matrix
-    cs.xyz_matrix.m00 = 0.4124;
-    cs.xyz_matrix.m01 = 0.3576;
-    cs.xyz_matrix.m02 = 0.1805;
-    cs.xyz_matrix.m03 = 0.2126;
-    cs.xyz_matrix.m04 = 0.7152;
-    cs.xyz_matrix.m05 = 0.0722;
-    cs.xyz_matrix.m06 = 0.0193;
-    cs.xyz_matrix.m07 = 0.1192;
-    cs.xyz_matrix.m08 = 0.9505;
+    cs.xyz_matrix.m00 = 0.4124f;
+    cs.xyz_matrix.m01 = 0.3576f;
+    cs.xyz_matrix.m02 = 0.1805f;
+    cs.xyz_matrix.m03 = 0.2126f;
+    cs.xyz_matrix.m04 = 0.7152f;
+    cs.xyz_matrix.m05 = 0.0722f;
+    cs.xyz_matrix.m06 = 0.0193f;
+    cs.xyz_matrix.m07 = 0.1192f;
+    cs.xyz_matrix.m08 = 0.9505f;
     return cs;
 }
 

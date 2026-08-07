@@ -34,8 +34,8 @@ __DEVICE__ struct CineonCurve
 cineon_curve()
 {
     struct CineonCurve cv;
-    cv.density = 2.046;
-    cv.gamma = 0.6;
+    cv.density = 2.046f;
+    cv.gamma = 0.6f;
     cv.bitdepth = 1023;
     cv.offset = 95;
     cv.white = 685;
@@ -72,11 +72,11 @@ __DEVICE__ float3
 CineonCurve_lin_cineon(struct CineonCurve cv, float3 rgb)
 {
     float scale = CineonCurve_steps(cv) / cv.gamma;
-    float gain = 1.0 - pow10_f((cv.offset - cv.white) * scale);
+    float gain = 1.0f - pow10_f((cv.offset - cv.white) * scale);
     float offset = cv.white / cv.bitdepth;
-    float r = offset + log_f(max_f((rgb.x - 1.0f) * gain + 1.0, 1e-7)) / (cv.bitdepth * log_f(10) * scale);
-    float g = offset + log_f(max_f((rgb.y - 1.0f) * gain + 1.0, 1e-7)) / (cv.bitdepth * log_f(10) * scale);
-    float b = offset + log_f(max_f((rgb.z - 1.0f) * gain + 1.0, 1e-7)) / (cv.bitdepth * log_f(10) * scale);
+    float r = offset + log_f(max_f((rgb.x - 1.0f) * gain + 1.0f, 1e-7)) / (cv.bitdepth * log_f(10.0f) * scale);
+    float g = offset + log_f(max_f((rgb.y - 1.0f) * gain + 1.0f, 1e-7)) / (cv.bitdepth * log_f(10.0f) * scale);
+    float b = offset + log_f(max_f((rgb.z - 1.0f) * gain + 1.0f, 1e-7)) / (cv.bitdepth * log_f(10.0f) * scale);
     rgb = make_float3(r, g, b);
     return rgb;
 }

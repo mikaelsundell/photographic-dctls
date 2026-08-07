@@ -10,15 +10,15 @@ whitepoint_d60_d65_adaptation()
     struct Matrix mt;
     // colortool --inputilluminant D60 --targetilluminant D65
     // cat02 adaptation matrix
-    mt.m00 = 0.988254;
-    mt.m01 = -0.007883;
-    mt.m02 = 0.016710;
-    mt.m03 = -0.005691;
-    mt.m04 = 0.998709;
-    mt.m05 = 0.006653;
-    mt.m06 = 0.000352;
-    mt.m07 = 0.001120;
-    mt.m08 = 1.077838;
+    mt.m00 = 0.988254f;
+    mt.m01 = -0.007883f;
+    mt.m02 = 0.016710f;
+    mt.m03 = -0.005691f;
+    mt.m04 = 0.998709f;
+    mt.m05 = 0.006653f;
+    mt.m06 = 0.000352f;
+    mt.m07 = 0.001120f;
+    mt.m08 = 1.077838f;
     return mt;
 }
 
@@ -28,15 +28,15 @@ whitepoint_d63_d65_adaptation()
     struct Matrix mt;
     // colortool --inputilluminant D63 --targetilluminant D65
     // cat02 adaptation matrix
-    mt.m00 = 1.009538;
-    mt.m01 = 0.026971;
-    mt.m02 = 0.021311;
-    mt.m03 = 0.018802;
-    mt.m04 = 0.975347;
-    mt.m05 = 0.008207;
-    mt.m06 = 0.000134;
-    mt.m07 = 0.002175;
-    mt.m08 = 1.138405;
+    mt.m00 = 1.009538f;
+    mt.m01 = 0.026971f;
+    mt.m02 = 0.021311f;
+    mt.m03 = 0.018802f;
+    mt.m04 = 0.975347f;
+    mt.m05 = 0.008207f;
+    mt.m06 = 0.000134f;
+    mt.m07 = 0.002175f;
+    mt.m08 = 1.138405f;
     return mt;
 }
 
@@ -46,15 +46,15 @@ whitepoint_d65_d60_adaptation()
     struct Matrix mt;
     // colortool --inputilluminant D65 --targetilluminant D60
     // cat02 adaptation matrix
-    mt.m00 = 1.011938;
-    mt.m01 = 0.008005;
-    mt.m02 = -0.015737;
-    mt.m03 = 0.005769;
-    mt.m04 = 1.001345;
-    mt.m05 = -0.006271;
-    mt.m06 = -0.000337;
-    mt.m07 = -0.001043;
-    mt.m08 = 0.927795;
+    mt.m00 = 1.011938f;
+    mt.m01 = 0.008005f;
+    mt.m02 = -0.015737f;
+    mt.m03 = 0.005769f;
+    mt.m04 = 1.001345f;
+    mt.m05 = -0.006271f;
+    mt.m06 = -0.000337f;
+    mt.m07 = -0.001043f;
+    mt.m08 = 0.927795f;
     return mt;
 }
 
@@ -64,15 +64,15 @@ whitepoint_d65_d63_adaptation()
     struct Matrix mt;
     // colortool --inputilluminant D65 --targetilluminant D63
     // cat02 adaptation matrix
-    mt.m00 = 0.991064;
-    mt.m01 = -0.027365;
-    mt.m02 = -0.018356;
-    mt.m03 = -0.019104;
-    mt.m04 = 1.025820;
-    mt.m05 = -0.007038;
-    mt.m06 = -0.000080;
-    mt.m07 = -0.001957;
-    mt.m08 = 0.878438;
+    mt.m00 = 0.991064f;
+    mt.m01 = -0.027365f;
+    mt.m02 = -0.018356f;
+    mt.m03 = -0.019104f;
+    mt.m04 = 1.025820f;
+    mt.m05 = -0.007038f;
+    mt.m06 = -0.000080f;
+    mt.m07 = -0.001957f;
+    mt.m08 = 0.878438f;
     return mt;
 }
 

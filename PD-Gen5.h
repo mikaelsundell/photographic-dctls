@@ -19,12 +19,12 @@ __DEVICE__ struct Gen5Curve
 gen5_curve()
 {
     struct Gen5Curve cv;
-    cv.a = 0.08692876065491224;
-    cv.b = 0.005494072432257808;
-    cv.c = 0.5300133392291939;
-    cv.d = 8.283605932402494;
-    cv.e = 0.09246575342465753;
-    cv.lin_cut = 0.005;
+    cv.a = 0.08692876065491224f;
+    cv.b = 0.005494072432257808f;
+    cv.c = 0.5300133392291939f;
+    cv.d = 8.283605932402494f;
+    cv.e = 0.09246575342465753f;
+    cv.lin_cut = 0.005f;
     cv.log_cut = cv.d * cv.lin_cut + cv.e;
     return cv;
 }
@@ -64,25 +64,25 @@ gen5_colorspace()
     struct Gen5Colorspace cs;
     // colortool --inputcolorspace GEN5 -v
     // convert xyz to gen5 matrix
-    cs.gen5_matrix.m00 = 1.866382;
-    cs.gen5_matrix.m01 = -0.518397;
-    cs.gen5_matrix.m02 = -0.234610;
-    cs.gen5_matrix.m03 = -0.600342;
-    cs.gen5_matrix.m04 = 1.378149;
-    cs.gen5_matrix.m05 = 0.176732;
-    cs.gen5_matrix.m06 = 0.002452;
-    cs.gen5_matrix.m07 = 0.086400;
-    cs.gen5_matrix.m08 = 0.836943;
+    cs.gen5_matrix.m00 = 1.866382f;
+    cs.gen5_matrix.m01 = -0.518397f;
+    cs.gen5_matrix.m02 = -0.234610f;
+    cs.gen5_matrix.m03 = -0.600342f;
+    cs.gen5_matrix.m04 = 1.378149f;
+    cs.gen5_matrix.m05 = 0.176732f;
+    cs.gen5_matrix.m06 = 0.002452f;
+    cs.gen5_matrix.m07 = 0.086400f;
+    cs.gen5_matrix.m08 = 0.836943f;
     // convert gen5 to xyz matrix
-    cs.xyz_matrix.m00 = 0.606530;
-    cs.xyz_matrix.m01 = 0.220408;
-    cs.xyz_matrix.m02 = 0.123479;
-    cs.xyz_matrix.m03 = 0.267989;
-    cs.xyz_matrix.m04 = 0.832731;
-    cs.xyz_matrix.m05 = -0.100720;
-    cs.xyz_matrix.m06 = -0.029442;
-    cs.xyz_matrix.m07 = -0.086611;
-    cs.xyz_matrix.m08 = 1.204861;
+    cs.xyz_matrix.m00 = 0.606530f;
+    cs.xyz_matrix.m01 = 0.220408f;
+    cs.xyz_matrix.m02 = 0.123479f;
+    cs.xyz_matrix.m03 = 0.267989f;
+    cs.xyz_matrix.m04 = 0.832731f;
+    cs.xyz_matrix.m05 = -0.100720f;
+    cs.xyz_matrix.m06 = -0.029442f;
+    cs.xyz_matrix.m07 = -0.086611f;
+    cs.xyz_matrix.m08 = 1.204861f;
     return cs;
 }
 

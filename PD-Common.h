@@ -110,7 +110,7 @@ log10_f3(float3 value)
 __DEVICE__ float
 pow10_f(float value)
 {
-    return _powf(10.0, value);
+    return _powf(10.0f, value);
 }
 
 __DEVICE__ float3
@@ -164,7 +164,7 @@ max_f3(float3 value, float m)
 __DEVICE__ float
 mix_f(float x, float y, float a)
 {
-    return x * (1.0 - a) + y * a;
+    return x * (1.0f - a) + y * a;
 }
 
 __DEVICE__ float3
@@ -243,14 +243,14 @@ adjust_luma_rec709(float3 rgb, float l)
 __DEVICE__ float3
 adjust_reinhard(float3 linear, float exposure)
 {
-    return linear / (1.0 + linear * exposure);
+    return linear / (1.0f + linear * exposure);
 }
 
 // adjust for display
 __DEVICE__ float3
 adjust_display(float3 rgb)
 {
-    return clamp_f3(rgb, 0.0, 1.0);
+    return clamp_f3(rgb, 0.0f, 1.0f);
 }
 
 // convert hsv to rgb
@@ -260,28 +260,28 @@ hsv_rgb(float3 hsv)
     float hue = hsv.x;
     float sat = hsv.y;
     float val = hsv.z;
-    hue = mod_f(hue + 360.0, 360.0);
+    hue = mod_f(hue + 360.0f, 360.0f);
     float c = val * sat;
-    float x = c * (1.0 - abs_f(mod_f(hue / 60.0, 2.0) - 1.0));
+    float x = c * (1.0f - abs_f(mod_f(hue / 60.0f, 2.0f) - 1.0f));
     float m = val - c;
-    float3 rgbp = make_float3(0.0, 0.0, 0.0);
-    if (0.0 <= hue && hue < 60.0) {
-        rgbp = make_float3(c, x, 0.0);
+    float3 rgbp = make_float3(0.0f, 0.0f, 0.0f);
+    if (0.0f <= hue && hue < 60.0f) {
+        rgbp = make_float3(c, x, 0.0f);
     }
-    else if (60.0 <= hue && hue < 120.0) {
-        rgbp = make_float3(x, c, 0.0);
+    else if (60.0f <= hue && hue < 120.0f) {
+        rgbp = make_float3(x, c, 0.0f);
     }
-    else if (120.0 <= hue && hue < 180.0) {
-        rgbp = make_float3(0.0, c, x);
+    else if (120.0f <= hue && hue < 180.0f) {
+        rgbp = make_float3(0.0f, c, x);
     }
-    else if (180.0 <= hue && hue < 240.0) {
-        rgbp = make_float3(0.0, x, c);
+    else if (180.0f <= hue && hue < 240.0f) {
+        rgbp = make_float3(0.0f, x, c);
     }
-    else if (240.0 <= hue && hue < 300.0) {
-        rgbp = make_float3(x, 0.0, c);
+    else if (240.0f <= hue && hue < 300.0f) {
+        rgbp = make_float3(x, 0.0f, c);
     }
-    else if (300.0 < hue && hue < 360.0) {
-        rgbp = make_float3(c, 0.0, x);
+    else if (300.0f <= hue && hue < 360.0f) {
+        rgbp = make_float3(c, 0.0f, x);
     }
     return rgbp + m;
 }
@@ -318,7 +318,7 @@ rgb_hsv(float3 rgb)
         S = delta / c_max;
     }
     float V = c_max;
-    float3 color = make_float3(H * 360.0, S, V);
+    float3 color = make_float3(H * 360.0f, S, V);
     return color;
 }
 
