@@ -18,19 +18,19 @@ __DEVICE__ struct TonemapCurve
 tonemap_curve()
 {
     struct TonemapCurve tm;
-    tm.low = 0.300;
-    tm.lowsoft = 0.200;
-    tm.high = 0.350;
-    tm.highsoft = 0.200;
-    tm.shoulder = 0.5;
-    tm.toe = 0.4;
+    tm.low = 0.300f;
+    tm.lowsoft = 0.200f;
+    tm.high = 0.350f;
+    tm.highsoft = 0.200f;
+    tm.shoulder = 0.5f;
+    tm.toe = 0.4f;
     return tm;
 }
 
 __DEVICE__ float
 tonemap_pow(float x, float c, float p)
 {
-    return pow(x, c) / pow(p, c - 1.0);
+    return pow_f(x, c) / pow_f(p, c - 1.0f);
 }
 
 __DEVICE__ float
@@ -40,44 +40,57 @@ tonemap_scurve(float x, float p, float c)
         return tonemap_pow(x, c, p);
     }
     else {
-        return 1.0 - tonemap_pow(1.0 - x, c, 1.0 - p);
+        return 1.0f - tonemap_pow(1.0f - x, c, 1.0f - p);
     }
 }
 
-// ootf
+// experimental contrast / transfer-response shaping
+//
+// These functions reshape encoded RGB values between common display transfer
+// responses for appearance matching. They do not perform RGB primary or gamut
+// conversion. Colorspace conversion, when required, must be handled separately.
+
+// gamma 2.6 encoded -> Rec709 encoded, with midtone response adjustment
 __DEVICE__ float3
-tonemap_ootf_dcip3_rec709(float3 log)
+tonemap_contrast_gamma26_rec709(float3 rgb)
 {
-    log = lin_rec709gamma24(dcip3gamma26_lin(log));
-    return pow_f3(log, 2.2 / 2.6);  // purely experiemental dcip3 to rec709
+    rgb = gamma26_lin(rgb);           // decode gamma 2.6 to linear
+    rgb = lin_rec709(rgb);            // encode with Rec709 transfer function
+    return pow_f3(rgb, 2.2f / 2.6f);  // experimental appearance adjustment
 }
 
+// sRGB encoded -> Rec709 encoded, with midtone response adjustment
 __DEVICE__ float3
-tonemap_ootf_sRGB_rec709(float3 log)
+tonemap_contrast_sRGB_rec709(float3 rgb)
 {
-    log = lin_rec709gamma24(sRGBgamma22_lin(log));
-    return pow_f3(log, 2.2 / 2.4);  // purely experiemental sRGB to rec709
+    rgb = sRGBgamma22_lin(rgb);        // decode sRGB transfer function to linear
+    rgb = lin_rec709(rgb);             // encode with Rec709 transfer function
+    return pow_f3(rgb, 2.2f / 2.4f);   // experimental appearance adjustment
 }
 
+// Rec709 encoded -> sRGB encoded, with midtone response adjustment
 __DEVICE__ float3
-tonemap_ootf_rec709_sRGB(float3 log)
+tonemap_contrast_rec709_sRGB(float3 rgb)
 {
-    log = lin_sRGBgamma22(rec709gamma24_lin(log));
-    return pow_f3(log, 2.4 / 2.2);  // purely experiemental rec709 to srgb
+    rgb = rec709_lin(rgb);             // decode Rec709 transfer function to linear
+    rgb = lin_sRGBgamma22(rgb);         // encode with sRGB transfer function
+    return pow_f3(rgb, 2.4f / 2.2f);   // experimental appearance adjustment
 }
 
+// Rec709 encoded -> gamma 2.6 encoded, with midtone response adjustment
 __DEVICE__ float3
-tonemap_ootf_rec709_dcip3(float3 log)
+tonemap_contrast_rec709_gamma26(float3 rgb)
 {
-    log = lin_dcip3gamma26(rec709gamma24_lin(log));
-    return pow_f3(log, 2.6 / 2.2);  // purely experiemental rec709 to dcip3
+    rgb = rec709_lin(rgb);             // decode Rec709 transfer function to linear
+    rgb = lin_gamma26(rgb);            // encode with gamma 2.6
+    return pow_f3(rgb, 2.6f / 2.2f);   // experimental appearance adjustment
 }
 
 // tonecompress reinhard
 __DEVICE__ float3
 tonecompress_reinhard_simple(float3 lin, float exp)
 {
-    return lin / (1.0 + lin * exp);
+    return lin / (1.0f + lin * exp);
 }
 
 __DEVICE__ float
@@ -85,7 +98,7 @@ tonecompress_reinhard_scalar(float Y, float exp)
 {
     float Yp = Y / (1.0f + exp * Y);
     float denom = max_f(Y, 1e-6f);  // safety for very small/odd Ys
-    return Yp / denom;              // s = Y'/Y  in 0-1
+    return Yp / denom;              // s = Y'/Y in 0-1
 }
 
 __DEVICE__ float3
@@ -95,13 +108,13 @@ tonecompress_reinhard_luma(float3 rgb, float3 w, float exp, float sat)
     // luma-preserving scale
     float s = tonecompress_reinhard_scalar(Y, exp);
     float3 rgblp = rgb * s;
-    // build a neutral of the *new* luminance Y' = s*Y.
-    // gray is (g,g,g) and w.x+w.y+w.z == 1, so (Y',Y',Y') has luminance Y'.
+    // build a neutral of the new luminance Y' = s * Y
+    // gray is (g,g,g) and w.x+w.y+w.z == 1, so (Y',Y',Y') has luminance Y'
     float Yp = s * Y;
     float3 gray = make_float3(Yp, Yp, Yp);
-    // desaturate into the shoulder proportional to compression.
-    // sat_mix in [0..1]: 1 => keep chroma; 0 => fully gray.
-    // using pow(s, kSat) keeps midtones intact and only tames compressed highs.
+    // desaturate into the shoulder proportional to compression
+    // satmix in [0..1]: 1 => keep chroma; 0 => fully gray
+    // using pow(s, sat) keeps midtones intact and only tames compressed highs
     float satmix = pow_f(s, sat);
     // blend between gray and luma-preserved RGB
     return gray + (rgblp - gray) * satmix;
