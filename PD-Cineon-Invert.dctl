@@ -9,18 +9,18 @@
 
 // clang-format off
 DEFINE_UI_PARAMS(density, Density, DCTLUI_SLIDER_FLOAT, 2.046, 0, 4.092, 1);
-DEFINE_UI_PARAMS(bitdepth, Bitdepth, DCTLUI_SLIDER_FLOAT, 1023, 0, 2048, 1);
-DEFINE_UI_PARAMS(offset, Offset, DCTLUI_SLIDER_FLOAT, 95, 0, 190, 1);
-DEFINE_UI_PARAMS(dminx, Density dmin R, DCTLUI_SLIDER_FLOAT, 0.5, 0, 10, 0.01);
-DEFINE_UI_PARAMS(dminy, Density dmin G, DCTLUI_SLIDER_FLOAT, 0.5, 0, 10, 0.01);
-DEFINE_UI_PARAMS(dminz, Density dmin B, DCTLUI_SLIDER_FLOAT, 0.5, 0, 10, 0.01);
-DEFINE_UI_PARAMS(scalex, Density scale R, DCTLUI_SLIDER_FLOAT, 1, 0, 10, 0.01);
-DEFINE_UI_PARAMS(scaley, Density scale G, DCTLUI_SLIDER_FLOAT, 1, 0, 10, 0.01);
-DEFINE_UI_PARAMS(scalez, Density scale B, DCTLUI_SLIDER_FLOAT, 1, 0, 10, 0.01);
-DEFINE_UI_PARAMS(samplerx, Sampler x, DCTLUI_SLIDER_FLOAT, 0, 0, 4096, 1);
-DEFINE_UI_PARAMS(samplery, Sampler y, DCTLUI_SLIDER_FLOAT, 0, 0, 2048, 1);
-DEFINE_UI_PARAMS(samplerw, Sampler width, DCTLUI_SLIDER_FLOAT, 20, 1, 100, 1);
-DEFINE_UI_PARAMS(samplerh, Sampler height, DCTLUI_SLIDER_FLOAT, 20, 1, 100, 1);
+DEFINE_UI_PARAMS(bitdepth, Bitdepth, DCTLUI_SLIDER_FLOAT, 1023.0f, 0, 2048.0f, 1);
+DEFINE_UI_PARAMS(offset, Offset, DCTLUI_SLIDER_FLOAT, 95.0f, 0, 190.0f, 1);
+DEFINE_UI_PARAMS(dminx, Density dmin R, DCTLUI_SLIDER_FLOAT, 0.5f, 0, 10.0f, 0.01f);
+DEFINE_UI_PARAMS(dminy, Density dmin G, DCTLUI_SLIDER_FLOAT, 0.5f, 0, 10.0f, 0.01f);
+DEFINE_UI_PARAMS(dminz, Density dmin B, DCTLUI_SLIDER_FLOAT, 0.5f, 0, 10.0f, 0.01f);
+DEFINE_UI_PARAMS(scalex, Density scale R, DCTLUI_SLIDER_FLOAT, 1.0f, 0, 10.0f, 0.01f);
+DEFINE_UI_PARAMS(scaley, Density scale G, DCTLUI_SLIDER_FLOAT, 1.0f, 0, 10.0f, 0.01f);
+DEFINE_UI_PARAMS(scalez, Density scale B, DCTLUI_SLIDER_FLOAT, 1.0f, 0, 10.0f, 0.01f);
+DEFINE_UI_PARAMS(samplerx, Sampler x, DCTLUI_SLIDER_FLOAT, 0.0f, 0, 4096.0f, 1);
+DEFINE_UI_PARAMS(samplery, Sampler y, DCTLUI_SLIDER_FLOAT, 0.0f, 0, 2048.0f, 1);
+DEFINE_UI_PARAMS(samplerw, Sampler width, DCTLUI_SLIDER_FLOAT, 20.0f, 1.0f, 100.0f, 1);
+DEFINE_UI_PARAMS(samplerh, Sampler height, DCTLUI_SLIDER_FLOAT, 20.0f, 1.0f, 100.0f, 1);
 DEFINE_UI_PARAMS(showsampler, Show sampler, DCTLUI_CHECK_BOX, 0)
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 DEFINE_UI_PARAMS(cineonmethod, Cineon method, DCTLUI_COMBO_BOX, 0, {INVERSE, REVERSE}, {Inverse, Reverse})
@@ -63,7 +63,7 @@ __DEVICE__ float3 sample(__TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_T
         }
     }
     if (count > 0) {
-        return sum / make_float3(count, count, count);
+        return sum / make_float3((float)count, (float)count, (float)count);
     } else {
         return make_float3(0.0f, 0.0f, 0.0f);
     }
@@ -107,10 +107,10 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTU
 
     // sample
     if (dminmethod == SAMPLER) {
-        sampler.x1 = samplerx - samplerw / 2;
-        sampler.x2 = samplerx + samplerw / 2;
-        sampler.y1 = samplery - samplerh / 2;
-        sampler.y2 = samplery + samplerh / 2;
+        sampler.x1 = (int)(samplerx - samplerw / 2.0f);
+        sampler.x2 = (int)(samplerx + samplerw / 2.0f);
+        sampler.y1 = (int)(samplery - samplerh / 2.0f);
+        sampler.y2 = (int)(samplery + samplerh / 2.0f);
     }
 
     struct CineonInvertParams params;
@@ -135,8 +135,8 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTU
     }
     if (showsampler && params.dminmethod == SAMPLER) {
         float3 color = sampler_color(params);
-        int crossw = (samplerw / 2) * 3 / 2;
-        int crossh = (samplerh / 2) * 3 / 2;
+        int crossw = (int)((samplerw / 2.0f) * 3.0f / 2.0f);
+        int crossh = (int)((samplerh / 2.0f) * 3.0f / 2.0f);
         if ((p_X == sampler.x1 || p_X == sampler.x2 - 1) && (p_Y >= sampler.y1 && p_Y < sampler.y2) ||
             (p_Y == sampler.y1 || p_Y == sampler.y2 - 1) && (p_X >= sampler.x1 && p_X < sampler.x2)) {
             rgb = color;
@@ -144,8 +144,8 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTU
             if ((p_X >= sampler.x1 && p_X < sampler.x2) && (p_Y >= sampler.y1 && p_Y < sampler.y2)) {
                 rgb = params.dmin;
             } else {
-               if ((p_X == samplerx && (p_Y >= samplery - crossh && p_Y < samplery + crossh)) ||
-                    (p_Y == samplery && (p_X >= samplerx - crossw && p_X < samplerx + crossw)))
+               if ((p_X == (int)samplerx && (p_Y >= (int)samplery - crossh && p_Y < (int)samplery + crossh)) ||
+                    (p_Y == (int)samplery && (p_X >= (int)samplerx - crossw && p_X < (int)samplerx + crossw)))
                 {
                     rgb = color;
                 }

@@ -54,15 +54,15 @@ abs_f3(float3 value)
 }
 
 __DEVICE__ float
-clamp_f(float value, float min, float max)
+clamp_f(float value, float min_val, float max_val) 
 {
-    return _clampf(value, min, max);
+    return _clampf(value, min_val, max_val);
 }
 
 __DEVICE__ float3
-clamp_f3(float3 value, float min, float max)
+clamp_f3(float3 value, float min_val, float max_val)
 {
-    return make_float3(clamp_f(value.x, min, max), clamp_f(value.y, min, max), clamp_f(value.z, min, max));
+    return make_float3(clamp_f(value.x, min_val, max_val), clamp_f(value.y, min_val, max_val), clamp_f(value.z, min_val, max_val));
 }
 
 __DEVICE__ float
@@ -74,7 +74,7 @@ hypot_f(float x, float y)
 __DEVICE__ float
 log_f(float value)
 {
-    return _logf(value);
+    return _logf(_fmaxf(1e-7f, value)); 
 }
 
 __DEVICE__ float3
@@ -86,7 +86,7 @@ log_f3(float3 value)
 __DEVICE__ float
 log2_f(float value)
 {
-    return _log2f(value);
+    return _log2f(_fmaxf(1e-7f, value)); 
 }
 
 __DEVICE__ float3
@@ -98,7 +98,7 @@ log2_f3(float3 value)
 __DEVICE__ float
 log10_f(float value)
 {
-    return _log10f(value);
+    return _log10f(_fmaxf(1e-7f, value)); 
 }
 
 __DEVICE__ float3
@@ -110,7 +110,7 @@ log10_f3(float3 value)
 __DEVICE__ float
 pow10_f(float value)
 {
-    return _powf(10.0, value);
+    return _powf(10.0f, value);
 }
 
 __DEVICE__ float3
@@ -122,7 +122,7 @@ pow10_f3(float3 value)
 __DEVICE__ float
 pow_f(float value, float m)
 {
-    return _powf(value, m);
+    return _powf(_fmaxf(1e-7f, value), m); 
 }
 
 __DEVICE__ float3
@@ -164,7 +164,7 @@ max_f3(float3 value, float m)
 __DEVICE__ float
 mix_f(float x, float y, float a)
 {
-    return x * (1.0 - a) + y * a;
+    return x * (1.0f - a) + y * a;
 }
 
 __DEVICE__ float3
@@ -209,7 +209,7 @@ luma_rec601(float3 rgb)
 __DEVICE__ float
 luma_rec709(float3 rgb)
 {
-    float luma = 0.2126f * rgb.x + 0.7152f * rgb.y + 0.0722f * rgb.z;
+    float luma = 0.2126f * rgb.x + 0.7152f * rgb.y + 0.0722f * rgb.z; 
     return luma;
 }
 
@@ -217,7 +217,7 @@ luma_rec709(float3 rgb)
 __DEVICE__ float
 luma_rec2100(float3 rgb)
 {
-    float luma = 0.2627f * rgb.x + 0.6780f * rgb.y + 0.0593f * rgb.z;
+    float luma = 0.2627f * rgb.x + 0.6780f * rgb.y + 0.0593f * rgb.z; 
     return luma;
 }
 
@@ -243,14 +243,14 @@ adjust_luma_rec709(float3 rgb, float l)
 __DEVICE__ float3
 adjust_reinhard(float3 linear, float exposure)
 {
-    return linear / (1.0 + linear * exposure);
+    return linear / (1.0f + linear * exposure);
 }
 
 // adjust for display
 __DEVICE__ float3
 adjust_display(float3 rgb)
 {
-    return clamp_f3(rgb, 0.0, 1.0);
+    return clamp_f3(rgb, 0.0f, 1.0f);
 }
 
 // convert hsv to rgb
@@ -260,28 +260,28 @@ hsv_rgb(float3 hsv)
     float hue = hsv.x;
     float sat = hsv.y;
     float val = hsv.z;
-    hue = mod_f(hue + 360.0, 360.0);
+    hue = mod_f(hue + 360.0f, 360.0f);
     float c = val * sat;
-    float x = c * (1.0 - abs_f(mod_f(hue / 60.0, 2.0) - 1.0));
+    float x = c * (1.0f - abs_f(mod_f(hue / 60.0f, 2.0f) - 1.0f));
     float m = val - c;
-    float3 rgbp = make_float3(0.0, 0.0, 0.0);
-    if (0.0 <= hue && hue < 60.0) {
-        rgbp = make_float3(c, x, 0.0);
+    float3 rgbp = make_float3(0.0f, 0.0f, 0.0f);
+    if (0.0f <= hue && hue < 60.0f) {
+        rgbp = make_float3(c, x, 0.0f);
     }
-    else if (60.0 <= hue && hue < 120.0) {
-        rgbp = make_float3(x, c, 0.0);
+    else if (60.0f <= hue && hue < 120.0f) {
+        rgbp = make_float3(x, c, 0.0f);
     }
-    else if (120.0 <= hue && hue < 180.0) {
-        rgbp = make_float3(0.0, c, x);
+    else if (120.0f <= hue && hue < 180.0f) {
+        rgbp = make_float3(0.0f, c, x);
     }
-    else if (180.0 <= hue && hue < 240.0) {
-        rgbp = make_float3(0.0, x, c);
+    else if (180.0f <= hue && hue < 240.0f) {
+        rgbp = make_float3(0.0f, x, c);
     }
-    else if (240.0 <= hue && hue < 300.0) {
-        rgbp = make_float3(x, 0.0, c);
+    else if (240.0f <= hue && hue < 300.0f) {
+        rgbp = make_float3(x, 0.0f, c);
     }
-    else if (300.0 < hue && hue < 360.0) {
-        rgbp = make_float3(c, 0.0, x);
+    else if (300.0f < hue && hue < 360.0f) {
+        rgbp = make_float3(c, 0.0f, x);
     }
     return rgbp + m;
 }
@@ -318,7 +318,7 @@ rgb_hsv(float3 rgb)
         S = delta / c_max;
     }
     float V = c_max;
-    float3 color = make_float3(H * 360.0, S, V);
+    float3 color = make_float3(H * 360.0f, S, V);
     return color;
 }
 
@@ -362,20 +362,20 @@ rgb_hsl(float3 rgb)
     float r = rgb.x;
     float g = rgb.y;
     float b = rgb.z;
-    float max = max_f(max_f(r, g), b);
-    float min = min_f(min_f(r, g), b);
+    float max_val = max_f(max_f(r, g), b);
+    float min_val = min_f(min_f(r, g), b);
     float h, s, l;
-    l = (max + min) / 2.0f;
-    float delta = max - min;
-    if (delta == 0) {
-        h = s = 0;  // achromatic
+    l = (max_val + min_val) / 2.0f;
+    float delta = max_val - min_val;
+    if (delta == 0.0f) { 
+        h = s = 0.0f;  // achromatic
     }
     else {
-        s = l > 0.5f ? delta / (2.0f - max - min) : delta / (max + min);
-        if (max == r) {
-            h = (g - b) / delta + (g < b ? 6.0f : 0);
+        s = l > 0.5f ? delta / (2.0f - max_val - min_val) : delta / (max_val + min_val);
+        if (max_val == r) {
+            h = (g - b) / delta + (g < b ? 6.0f : 0.0f); 
         }
-        else if (max == g) {
+        else if (max_val == g) {
             h = (b - r) / delta + 2.0f;
         }
         else {
