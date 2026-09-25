@@ -17,6 +17,7 @@
       - [PD-LogC-Exposure](#pd-logc-exposure)
       - [PD-LogC-Print](#pd-logc-print)
       - [PD-LogC3-FilmMatrix](#pd-logc3-filmmatrix)
+      - [PD-LogC-PrinterLights](#pd-logc-printerlights)
     - [Utility DCTLs](#utility-dctls)
       - [PD-Colorcube](#pd-colorcube)
       - [PD-Colorwarp](#pd-colorwarp)
@@ -26,6 +27,7 @@
       - [PD-Saturation](#pd-saturation)
       - [PD-Stripify](#pd-stripify)
       - [PD-Tonecurve](#pd-tonecurve)
+      - [PD-Vignette](#pd-vignette)
       - [PD-Transform](#pd-transform)
         - [Supported color spaces](#supported-color-spaces)
         - [Supported gamma encodings](#supported-gamma-encodings)
@@ -57,8 +59,21 @@ The repository also serves as a testbench for future production tools. Experimen
 
 ### Change log:
 
-| Date       | Description                             |
-|------------|-----------------------------------------|
+| Date       | Description |
+|------------|-------------|
+| 2026-08-20 | Added generic `PD-Gamma.h` transfer function library |
+|            | Added `PD-Apple.h` with Apple Log support |
+|            | Refactored Rec.709 into the new `PD-Rec.h` library |
+|            | Replaced OOTF display mapping with dedicated tone contrast transforms and experimental comments |
+|            | Fixed D65 whitepoint adaptation for Lab output only |
+|            | Fixed color space selection in `PD-GamutCompress` luma coefficients |
+|            | Added consistent use of floating-point literals across the codebase |
+|            | Improved use of ACES curve constants |
+|            | Redesigned `PD-Tonecurve` with anchored black/white points, gamma-aware midgray, channel exposure controls, and improved toe/shoulder shaping |
+|            | Added mid-gray smoothing to `PD-Tonecurve` |
+|            | Added `PD-Vignette` with lens-based falloff |
+|            | Fixed clang-format formatting |
+| 2026-08-07 | Added Apple Log and Rec2020 |
 | 2025-06-05 | Added logctool_colorcube.exr for validating the color cube DCTL |
 |            | Added PD-Colorcube.dctl |
 |            | Added PD-Colorwarp.dctl |
@@ -73,7 +88,6 @@ The repository also serves as a testbench for future production tools. Experimen
 | 2025-06-15 | PD-Transform: Fixed issue with sRGB in and out |
 | 2025-06-06 | PD-Transform: Added support for DaVinci Wide Gamut |
 | 2025-06-03 | PD-Transform: Fixed an issue with incorrect INGEN5 instead of INFILM5 enum |
-
 
 Installation and utils
 ---------
@@ -170,6 +184,12 @@ The film style matrix makes the color characteristics of the Log C image similar
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-FilmMatrix.dctl
 
+#### PD-LogC-PrinterLights
+
+Printer light controls for LogC3 and LogC4, applying cyan, magenta, yellow, and master point adjustments as exposure changes in linear light.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC-PrinterLights.dctl
+
 ### Utility DCTLs
 
 #### PD-Colorcube
@@ -204,7 +224,7 @@ Grade adjustments, this DCTL is experimental code for lift, gamma, gain and log 
 
 Matrix adjustments, a utility for copying matrix values.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Stripify.dctl
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Matrix.dctl
 
 #### PD-Saturation
 
@@ -220,13 +240,19 @@ Matrix adjustments, this DCTL simplifies the color palette by pushing colors int
 
 #### PD-Tonecurve
 
-Tone curve adjustments for contrast, shoulder and toe controls.
+Anchored tone curve with black and white point controls, gamma-aware midgray, channel exposure, contrast, adjustable toe and shoulder shaping, and mid-gray smoothing for a more natural transition between the lower and upper curve regions.
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Tonecurve.dctl
 
+#### PD-Vignette
+
+Lens-based vignette for natural edge falloff. The effect is applied as a spatial exposure adjustment in linear light, with controls for amount, radius, softness, optical center, aspect, and rotation. Multiple lens-style variations can be used for natural, classic, anamorphic, or more mechanical falloff.
+
+- https://github.com/mikaelsundell/dctl/blob/master/PD-Vignette.dctl
+
 #### PD-Transform
 
-Color space transformations to and from CIE XYZ linear, tone compress, ootf and white point adaptation.
+Color space transformations to and from CIE XYZ linear, tone compression, display contrast and whitepoint adaptation.
 
 ##### Supported color spaces
 
@@ -237,13 +263,14 @@ Color space transformations to and from CIE XYZ linear, tone compress, ootf and 
 | AcesAP1 D60               | ACES working space primaries        |
 | ARRI AWG3 D65             | ARRI Wide Gamut 3                   |
 | ARRI AWG4 D65             | ARRI Wide Gamut 4                   |
+| Blackmagic Gen5 D65       | Blackmagic Gen 5 camera space       |
 | DaVinci Wide Gamut D65    | Resolve-native wide gamut           |
+| DCI-P3 'D60 sim' D60      | DCI-P3 simulated for D60 viewing    |
+| DCI-P3 D65                | DCI-P3 adapted to D65               |
+| DCI-P3 Theatrical D63     | For cinema projection               |
+| Rec2020 D65               | UHD wide-gamut color space          |
 | Rec709 D65                | HDTV color space                    |
 | sRGB D65                  | Standard RGB                        |
-| DCI-P3 'D60 sim' D60      | DCI-P3 simulated for D60 viewing    |
-| DCI-P3 Theatrical D63     | For cinema projection               |
-| DCI-P3 D65                | DCI-P3 adapted to D65               |
-| Blackmagic Gen5 D65       | Blackmagic Gen 5 camera space       |
 
 ##### Supported gamma encodings
 
@@ -252,23 +279,26 @@ Color space transformations to and from CIE XYZ linear, tone compress, ootf and 
 | Linear                  | Scene-linear light                  |
 | AcesCC                  | Log encoding for ACES               |
 | AcesCCT                 | Log encoding, softer shadows        |
-| ARRI LogC3              | ARRI’s legacy log curve             |
-| ARRI LogC4              | ARRI’s updated log curve            |
-| Cineon                  | Kodak's film scan log format        |
-| DaVinci Intermediate    | Resolve-native log transfer         |
-| sRGB / Gamma 2.2        | Common for displays                 |
-| Rec709 / Gamma 2.4      | HDTV gamma                          |
-| DCI-P3 / Gamma 2.6      | Theatrical gamma                    |
+| Apple Log               | Apple camera log encoding           |
+| ARRI LogC3              | ARRI legacy log curve               |
+| ARRI LogC4              | ARRI LogC4 curve                    |
 | Blackmagic Film         | Blackmagic Film Gen5 log            |
+| Cineon                  | Kodak film scan log format          |
+| DaVinci Intermediate    | Resolve-native log transfer         |
+| Gamma 2.2               | Pure power-law gamma 2.2            |
+| Gamma 2.4               | Pure power-law gamma 2.4            |
+| Gamma 2.6               | Pure power-law gamma 2.6            |
+| Rec709                  | Rec.709 piecewise transfer function |
+| sRGB                    | sRGB piecewise transfer function    |
 
 ##### Additional features
 
-| Feature                 | Options                              |
-|-------------------------|--------------------------------------|
-| **White Point Adaptation** | D60 → D65, D63 → D65, D65 → D60, D65 → D63 |
-| **Tone Compression**       | Reinhard, Inverse Reinhard         |
-| **Tone OOTF Mapping**      | DCI-P3 → Rec709, sRGB → Rec709, Rec709 → DCI-P3 |
-| **Exposure Index (EI)**    | For LogC3: EI 160 – EI 1600        |
+| Feature                    | Options                                                     |
+|----------------------------|-------------------------------------------------------------|
+| **White Point Adaptation** | D60 → D65, D63 → D65, D65 → D60, D65 → D63                |
+| **Tone Compression**       | Reinhard                                                    |
+| **Display Contrast**       | Gamma 2.6 → Rec709, sRGB → Rec709, Rec709 → sRGB, Rec709 → Gamma 2.6 |
+| **Exposure Index (EI)**    | For LogC3: EI 160 – EI 1600                                |
 
 - https://github.com/mikaelsundell/dctl/blob/master/PD-Transform.dctl
 

@@ -34,10 +34,8 @@ __DEVICE__ float3
 lin_gamma(float3 rgb, float exp)
 {
     struct GammaCurve cv = gamma_curve(exp);
-    return make_float3(
-        GammaCurve_lin_gamma(cv, rgb.x),
-        GammaCurve_lin_gamma(cv, rgb.y),
-        GammaCurve_lin_gamma(cv, rgb.z));
+    return make_float3(GammaCurve_lin_gamma(cv, rgb.x), GammaCurve_lin_gamma(cv, rgb.y),
+                       GammaCurve_lin_gamma(cv, rgb.z));
 }
 
 // convert gamma to linear
@@ -45,10 +43,8 @@ __DEVICE__ float3
 gamma_lin(float3 rgb, float exp)
 {
     struct GammaCurve cv = gamma_curve(exp);
-    return make_float3(
-        GammaCurve_gamma_lin(cv, rgb.x),
-        GammaCurve_gamma_lin(cv, rgb.y),
-        GammaCurve_gamma_lin(cv, rgb.z));
+    return make_float3(GammaCurve_gamma_lin(cv, rgb.x), GammaCurve_gamma_lin(cv, rgb.y),
+                       GammaCurve_gamma_lin(cv, rgb.z));
 }
 
 // convert linear to gamma 2.2

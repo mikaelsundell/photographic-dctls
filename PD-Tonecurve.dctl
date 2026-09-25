@@ -17,6 +17,7 @@ DEFINE_UI_PARAMS(low_r, Low R, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001);
 DEFINE_UI_PARAMS(low_g, Low G, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001);
 DEFINE_UI_PARAMS(low_b, Low B, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001);
 DEFINE_UI_PARAMS(contrast, Contrast, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 4.0, 0.01);
+DEFINE_UI_PARAMS(midsmooth, Mid Smooth, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 4.0, 0.01);
 DEFINE_UI_PARAMS(exposure_r, Exposure R, DCTLUI_SLIDER_FLOAT, 0.0, -2.0, 2.0, 0.001);
 DEFINE_UI_PARAMS(exposure_g, Exposure G, DCTLUI_SLIDER_FLOAT, 0.0, -2.0, 2.0, 0.001);
 DEFINE_UI_PARAMS(exposure_b, Exposure B, DCTLUI_SLIDER_FLOAT, 0.0, -2.0, 2.0, 0.001);
@@ -29,13 +30,14 @@ DEFINE_UI_PARAMS(whitepoint_r, White Point R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.
 DEFINE_UI_PARAMS(whitepoint_g, White Point G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.001);
 DEFINE_UI_PARAMS(whitepoint_b, White Point B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.001);
 DEFINE_UI_PARAMS(showcurve, Show Curve, DCTLUI_CHECK_BOX, 0)
-// clang-format on
 
+// clang-format on
 #include "PD-Common.h"
 #include "PD-Aces.h"
 #include "PD-Apple.h"
 #include "PD-Cineon.h"
 #include "PD-DWG.h"
+#include "PD-Gamma.h"
 #include "PD-Gen5.h"
 #include "PD-LogC.h"
 #include "PD-Rec.h"
@@ -55,6 +57,7 @@ struct ToneCurveParams
     float low_g;
     float low_b;
     float contrast;
+    float midsmooth;
     float exposure_r;
     float exposure_g;
     float exposure_b;
@@ -114,6 +117,7 @@ __DEVICE__ float3 gamma_to_lin(float3 rgb, struct ToneCurveParams params)
             rgb = sRGBgamma22_lin(rgb);
             break;
     }
+
     return rgb;
 }
 
@@ -162,24 +166,30 @@ __DEVICE__ float3 lin_to_gamma(float3 rgb, struct ToneCurveParams params)
             rgb = lin_sRGBgamma22(rgb);
             break;
     }
+
     return rgb;
 }
 
-__DEVICE__ float tonecurve_midgray(struct ToneCurveParams params)
+__DEVICE__ float3 tonecurve_midgray(struct ToneCurveParams params)
 {
     float3 gray = make_float3(0.18f, 0.18f, 0.18f);
-    return lin_to_gamma(gray, params).x;
+    gray.x *= pow_f(2.0f, params.exposure_r);
+    gray.y *= pow_f(2.0f, params.exposure_g);
+    gray.z *= pow_f(2.0f, params.exposure_b);
+    return lin_to_gamma(gray, params);
 }
 
-__DEVICE__ float channel_exposure(float x, float stops, struct ToneCurveParams params)
+__DEVICE__ float3 apply_exposure(float3 rgb, struct ToneCurveParams params)
 {
-    if (stops == 0.0f) {
-        return x;
+    if (params.exposure_r == 0.0f && params.exposure_g == 0.0f && params.exposure_b == 0.0f) {
+        return rgb;
     }
-    float3 rgb = make_float3(x, x, x);
     float3 lin = gamma_to_lin(rgb, params);
-    lin = lin * pow_f(2.0f, stops);
-    return lin_to_gamma(lin, params).x;
+    lin.x = lin.x * pow_f(2.0f, params.exposure_r);
+    lin.y = lin.y * pow_f(2.0f, params.exposure_g);
+    lin.z = lin.z * pow_f(2.0f, params.exposure_b);
+
+    return lin_to_gamma(lin, params);
 }
 
 __DEVICE__ float segment_contrast(float n, float contrast, int upper_segment)
@@ -212,19 +222,59 @@ __DEVICE__ float segment_toe(struct TonemapCurve tc, float n, float amount)
 __DEVICE__ float segment_shoulder(struct TonemapCurve tc, float n, float amount)
 {
     const float eps = 1e-6f;
+
     n = clamp_f(n, 0.0f, 1.0f);
+
     if (amount <= 0.0f) {
         return n;
     }
+
     float shoulder = clamp_f(amount * tc.shoulder, 0.0f, 1.0f - eps);
     float c = 2.0f / (1.0f - shoulder) - 1.0f;
+
     return clamp_f(tonemap_scurve(n, 0, c), 0.0f, 1.0f);
 }
 
-__DEVICE__ float tonecurve(struct TonemapCurve tc, float x, float blackpoint, float low, float lowoffset, float contrast, float midgray, float high, float highoffset, float whitepoint)
+__DEVICE__ float tonecurve_lower(struct TonemapCurve tc, float x, float black, float lowamount, float contrast, float gray)
+{
+    float n = x / gray;
+    n = segment_contrast(n, contrast, 0);
+    n = segment_toe(tc, n, lowamount);
+
+    return black + n * (gray - black);
+}
+
+__DEVICE__ float tonecurve_upper(struct TonemapCurve tc, float x, float white, float highamount, float contrast, float gray)
+{
+    float n = (x - gray) / (1.0f - gray);
+    n = segment_contrast(n, contrast, 1);
+    n = segment_shoulder(tc, n, highamount);
+
+    return gray + n * (white - gray);
+}
+
+__DEVICE__ float tonecurve_hermite(float x, float x0, float y0, float m0, float x1, float y1, float m1)
+{
+    const float eps = 1e-6f;
+
+    float span = max_f(x1 - x0, eps);
+    float t = clamp_f((x - x0) / span, 0.0f, 1.0f);
+    float t2 = t * t;
+    float t3 = t2 * t;
+
+    float h00 = 2.0f * t3 - 3.0f * t2 + 1.0f;
+    float h10 = t3 - 2.0f * t2 + t;
+    float h01 = -2.0f * t3 + 3.0f * t2;
+    float h11 = t3 - t2;
+
+    return h00 * y0 + h10 * span * m0 + h01 * y1 + h11 * span * m1;
+}
+
+__DEVICE__ float tonecurve(struct TonemapCurve tc, float x, float blackpoint, float low, float lowoffset, float contrast, float midsmooth, float midgray, float high, float highoffset, float whitepoint)
 {
     const float eps = 1e-6f;
     const float channel_sensitivity = 4.0f;
+    const float max_smooth_width = 0.15f;
     float gray = clamp_f(midgray, eps, 1.0f - eps);
     float black = clamp_f(blackpoint, 0.0f, gray - eps);
     float white = clamp_f(whitepoint, gray + eps, 1.0f);
@@ -232,22 +282,79 @@ __DEVICE__ float tonecurve(struct TonemapCurve tc, float x, float blackpoint, fl
     float highamount = clamp_f(high + highoffset * channel_sensitivity, 0.0f, 1.0f);
     x = clamp_f(x, 0.0f, 1.0f);
 
-    if (x < gray) {
-        float n = x / gray;
-        n = segment_contrast(n, contrast, 0);
-        n = segment_toe(tc, n, lowamount);
-        return black + n * (gray - black);
+    float smooth = clamp_f(midsmooth, 0.0f, 1.0f);
+    if (smooth <= 0.0f) {
+        if (x < gray) {
+            return tonecurve_lower(tc, x, black, lowamount, contrast, gray);
+        }
+        return tonecurve_upper(tc, x, white, highamount, contrast, gray);
     }
 
-    float n = (x - gray) / (1.0f - gray);
-    n = segment_contrast(n, contrast, 1);
-    n = segment_shoulder(tc, n, highamount);
-    return gray + n * (white - gray);
+    // Smooth only a limited region around middle gray.  The width is in the
+    // encoded working space so the toe and shoulder remain unchanged.
+    float width = smooth * max_smooth_width;
+    width = min_f(width, gray - eps);
+    width = min_f(width, 1.0f - gray - eps);
+
+    if (width <= eps) {
+        if (x < gray) {
+            return tonecurve_lower(tc, x, black, lowamount, contrast, gray);
+        }
+
+        return tonecurve_upper(tc, x, white, highamount, contrast, gray);
+    }
+
+    float x0 = gray - width;
+    float x1 = gray + width;
+    if (x <= x0) {
+        return tonecurve_lower(tc, x, black, lowamount, contrast, gray);
+    }
+
+    if (x >= x1) {
+        return tonecurve_upper(tc, x, white, highamount, contrast, gray);
+    }
+
+    float y0 = tonecurve_lower(tc, x0, black, lowamount, contrast, gray);
+    float y1 = tonecurve_upper(tc, x1, white, highamount, contrast, gray);
+
+    float delta = max_f(width * 0.01f, 1e-5f);
+    float y0_prev = tonecurve_lower(tc, max_f(x0 - delta, 0.0f), black, lowamount, contrast, gray);
+    float y1_next = tonecurve_upper(tc, min_f(x1 + delta, 1.0f), white, highamount, contrast, gray);
+
+    float m0 = (y0 - y0_prev) / delta;
+    float m1 = (y1_next - y1) / delta;
+
+    // The two bridge segments meet exactly at middle gray.  Use a
+    // monotonic center slope so the join remains smooth without creating
+    // a new overshoot or changing the middle-gray anchor.
+    float left_span = gray - x0;
+    float right_span = x1 - gray;
+    float left_secant = (gray - y0) / max_f(left_span, eps);
+    float right_secant = (y1 - gray) / max_f(right_span, eps);
+
+    m0 = clamp_f(m0, 0.0f, 3.0f * max_f(left_secant, 0.0f));
+    m1 = clamp_f(m1, 0.0f, 3.0f * max_f(right_secant, 0.0f));
+
+    float mid_slope = 0.0f;
+
+    if (left_secant > eps && right_secant > eps) {
+        mid_slope = 2.0f * left_secant * right_secant / (left_secant + right_secant);
+
+        mid_slope = min_f(mid_slope, 3.0f * left_secant);
+        mid_slope = min_f(mid_slope, 3.0f * right_secant);
+    }
+
+    if (x < gray) {
+        return tonecurve_hermite(x, x0, y0, m0, gray, gray, mid_slope);
+    }
+
+    return tonecurve_hermite(x, gray, gray, mid_slope, x1, y1, m1);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     struct ToneCurveParams params;
+
     params.gamma = gamma;
     params.ei = ei;
     params.blackpoint = blackpoint;
@@ -259,6 +366,7 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.low_g = low_g;
     params.low_b = low_b;
     params.contrast = contrast;
+    params.midsmooth = midsmooth;
     params.exposure_r = exposure_r;
     params.exposure_g = exposure_g;
     params.exposure_b = exposure_b;
@@ -273,45 +381,72 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.showcurve = showcurve;
 
     struct TonemapCurve tc = tonemap_curve();
+
     float3 rgb = make_float3(p_R, p_G, p_B);
-    float midgray = tonecurve_midgray(params);
 
-    float input_r = channel_exposure(rgb.x, params.exposure_r, params);
-    float input_g = channel_exposure(rgb.y, params.exposure_g, params);
-    float input_b = channel_exposure(rgb.z, params.exposure_b, params);
+    float3 midgray = tonecurve_midgray(params);
+    float base_midgray = lin_to_gamma(make_float3(0.18f, 0.18f, 0.18f), params).x;
 
-    rgb.x = tonecurve(tc, input_r, params.blackpoint + params.blackpoint_r, params.low, params.low_r, params.contrast, midgray, params.high, params.high_r, params.whitepoint + params.whitepoint_r);
-    rgb.y = tonecurve(tc, input_g, params.blackpoint + params.blackpoint_g, params.low, params.low_g, params.contrast, midgray, params.high, params.high_g, params.whitepoint + params.whitepoint_g);
-    rgb.z = tonecurve(tc, input_b, params.blackpoint + params.blackpoint_b, params.low, params.low_b, params.contrast, midgray, params.high, params.high_b, params.whitepoint + params.whitepoint_b);
+    float black_r = clamp_f(params.blackpoint + params.blackpoint_r, 0.0f, 1.0f);
+    float black_g = clamp_f(params.blackpoint + params.blackpoint_g, 0.0f, 1.0f);
+    float black_b = clamp_f(params.blackpoint + params.blackpoint_b, 0.0f, 1.0f);
+    float white_r = clamp_f(params.whitepoint + params.whitepoint_r, 0.0f, 1.0f);
+    float white_g = clamp_f(params.whitepoint + params.whitepoint_g, 0.0f, 1.0f);
+    float white_b = clamp_f(params.whitepoint + params.whitepoint_b, 0.0f, 1.0f);
+
+    rgb = apply_exposure(rgb, params);
+    rgb.x = tonecurve(tc, rgb.x, black_r, params.low, params.low_r, params.contrast, params.midsmooth, midgray.x, params.high, params.high_r, white_r);
+    rgb.y = tonecurve(tc, rgb.y, black_g, params.low, params.low_g, params.contrast, params.midsmooth, midgray.y, params.high, params.high_g, white_g);
+    rgb.z = tonecurve(tc, rgb.z, black_b, params.low, params.low_b, params.contrast, params.midsmooth, midgray.z, params.high, params.high_b, white_b);
 
     if (params.showcurve > 0) {
         float x = float(p_X) / float(p_Width);
+
         int thickness = 4;
         float3 color = make_float3(0.0f, 0.0f, 0.0f);
+        float3 guide = make_float3(0.0f, 0.0f, 0.0f);
 
-        float curve_input_r = channel_exposure(x, params.exposure_r, params);
-        float r = tonecurve(tc, curve_input_r, params.blackpoint + params.blackpoint_r, params.low, params.low_r, params.contrast, midgray, params.high, params.high_r, params.whitepoint + params.whitepoint_r);
+        int grayX = int(base_midgray * float(p_Width));
+        int grayRX = int(midgray.x * float(p_Width));
+        int grayGX = int(midgray.y * float(p_Width));
+        int grayBX = int(midgray.z * float(p_Width));
+
+        if (p_X == grayX) {
+            guide = make_float3(0.25f, 0.25f, 0.08f);
+        }
+        if (p_X == grayRX) {
+            guide.x = 0.35f;
+        }
+        if (p_X == grayGX) {
+            guide.y = 0.35f;
+        }
+        if (p_X == grayBX) {
+            guide.z = 0.35f;
+        }
+
+        // Curve display shows tone shaping only.
+        // Channel exposure is intentionally not evaluated here.
+        float r = tonecurve(tc, x, black_r, params.low, params.low_r, params.contrast, params.midsmooth, midgray.x, params.high, params.high_r, white_r);
         int row = int((1.0f - r) * float(p_Height));
         if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
             color = make_float3(1.0f, 0.0f, 0.0f);
         }
 
-        float curve_input_g = channel_exposure(x, params.exposure_g, params);
-        float g = tonecurve(tc, curve_input_g, params.blackpoint + params.blackpoint_g, params.low, params.low_g, params.contrast, midgray, params.high, params.high_g, params.whitepoint + params.whitepoint_g);
+        float g = tonecurve(tc, x, black_g, params.low, params.low_g, params.contrast, params.midsmooth, midgray.y, params.high, params.high_g, white_g);
         row = int((1.0f - g) * float(p_Height));
         if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
             color = make_float3(0.0f, 1.0f, 0.0f);
         }
 
-        float curve_input_b = channel_exposure(x, params.exposure_b, params);
-        float b = tonecurve(tc, curve_input_b, params.blackpoint + params.blackpoint_b, params.low, params.low_b, params.contrast, midgray, params.high, params.high_b, params.whitepoint + params.whitepoint_b);
+        float b = tonecurve(tc, x, black_b, params.low, params.low_b, params.contrast, params.midsmooth, midgray.z, params.high, params.high_b, white_b);
         row = int((1.0f - b) * float(p_Height));
         if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
             color = make_float3(0.0f, 0.0f, 1.0f);
         }
 
-        float l = tonecurve(tc, x, params.blackpoint, params.low, 0.0f, params.contrast, midgray, params.high, 0.0f, params.whitepoint);
+        float l = tonecurve(tc, x, params.blackpoint, params.low, 0.0f, params.contrast, params.midsmooth, base_midgray, params.high, 0.0f, params.whitepoint);
         row = int((1.0f - l) * float(p_Height));
+
         thickness = 6;
         if (p_Y >= row - thickness / 2 && p_Y <= row + thickness / 2) {
             color = make_float3(1.0f, 1.0f, 1.0f);
@@ -323,10 +458,27 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
             return make_float3(0.0f, 1.0f, 1.0f);
         }
 
-        int grayX = int(midgray * float(p_Width));
-        int grayY = int((1.0f - midgray) * float(p_Height));
+        // Nominal 18% gray remains visible in yellow. Exposure-adjusted
+        // per-channel middle-gray positions are shown in RGB so the curve
+        // pivot can be compared directly with the exposed signal.
+        int grayY = int((1.0f - base_midgray) * float(p_Height));
         if (p_X >= grayX - 3 && p_X <= grayX + 3 && p_Y >= grayY - 3 && p_Y <= grayY + 3) {
             return make_float3(1.0f, 1.0f, 0.0f);
+        }
+
+        int grayRY = int((1.0f - midgray.x) * float(p_Height));
+        if (p_X >= grayRX - 2 && p_X <= grayRX + 2 && p_Y >= grayRY - 2 && p_Y <= grayRY + 2) {
+            return make_float3(1.0f, 0.0f, 0.0f);
+        }
+
+        int grayGY = int((1.0f - midgray.y) * float(p_Height));
+        if (p_X >= grayGX - 2 && p_X <= grayGX + 2 && p_Y >= grayGY - 2 && p_Y <= grayGY + 2) {
+            return make_float3(0.0f, 1.0f, 0.0f);
+        }
+
+        int grayBY = int((1.0f - midgray.z) * float(p_Height));
+        if (p_X >= grayBX - 2 && p_X <= grayBX + 2 && p_Y >= grayBY - 2 && p_Y <= grayBY + 2) {
+            return make_float3(0.0f, 0.0f, 1.0f);
         }
 
         int whiteX = p_Width - 1;
@@ -338,10 +490,11 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
         if (color.x > 0.0f || color.y > 0.0f || color.z > 0.0f) {
             return color;
         }
-
+        if (guide.x > 0.0f || guide.y > 0.0f || guide.z > 0.0f) {
+            return guide;
+        }
         float3 fill = make_float3(0.5f, 0.5f, 0.5f);
         return mix_f3(rgb, fill, 0.5f);
     }
-
     return rgb;
 }

@@ -1,0 +1,315 @@
+// Copyright 2022-present Contributors to the photographic-dctl project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/mikaelsundell/photographic-dctls
+
+// Lens-inspired vignette applied as a multiplicative attenuation in linear light.
+// Positive Amount values darken the image toward the lens edge in stops.
+
+// clang-format off
+DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_COMBO_BOX, 4, {LIN, ACESCC, ACESCCT, APPLELOG, LOGC3, LOGC4, FILM5, CINEON, DWGINTERMEDIATE, GAMMA22, GAMMA24, GAMMA26, REC709GAMMA, SRGBGAMMA}, {Linear, AcesCC, AcesCCT, Apple Log, ARRI LogC3, ARRI LogC4, Blackmagic Film, Cineon, DaVinci Intermediate, Gamma2.2, Gamma2.4, Gamma2.6, Rec709, sRGB})
+DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
+DEFINE_UI_PARAMS(vignette, Vignette, DCTLUI_COMBO_BOX, 0, {VIGNETTE_NATURAL, VIGNETTE_CLASSIC, VIGNETTE_ANAMORPHIC, VIGNETTE_MECHANICAL}, {Natural, Classic Lens, Anamorphic, Mechanical})
+DEFINE_UI_PARAMS(amount, Amount, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 4.0, 0.01)
+DEFINE_UI_PARAMS(radius, Radius, DCTLUI_SLIDER_FLOAT, 1.0, 0.10, 2.50, 0.01)
+DEFINE_UI_PARAMS(softness, Softness, DCTLUI_SLIDER_FLOAT, 0.60, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(aspect, Aspect, DCTLUI_SLIDER_FLOAT, 1.0, 0.25, 4.0, 0.01)
+DEFINE_UI_PARAMS(rotation, Rotation, DCTLUI_SLIDER_FLOAT, 0.0, -90.0, 90.0, 0.1)
+DEFINE_UI_PARAMS(center_x, Center X, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(center_y, Center Y, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(color_r, Edge R, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
+DEFINE_UI_PARAMS(color_g, Edge G, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
+DEFINE_UI_PARAMS(color_b, Edge B, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
+// clang-format on
+
+#include "PD-Common.h"
+#include "PD-Aces.h"
+#include "PD-Apple.h"
+#include "PD-Cineon.h"
+#include "PD-DWG.h"
+#include "PD-Gamma.h"
+#include "PD-Gen5.h"
+#include "PD-LogC.h"
+#include "PD-Rec.h"
+#include "PD-sRGB.h"
+
+#define VIGNETTE_NATURAL 0
+#define VIGNETTE_CLASSIC 1
+#define VIGNETTE_ANAMORPHIC 2
+#define VIGNETTE_MECHANICAL 3
+
+struct VignetteParams
+{
+    int gamma;
+    int ei;
+    int vignette;
+    float amount;
+    float radius;
+    float softness;
+    float aspect;
+    float rotation;
+    float center_x;
+    float center_y;
+    float color_r;
+    float color_g;
+    float color_b;
+};
+
+__DEVICE__ float3
+vignette_gamma_to_lin(float3 rgb, struct VignetteParams params)
+{
+    switch (params.gamma) {
+    case LIN:
+        break;
+    case ACESCC:
+        rgb = acescc_lin(rgb);
+        break;
+    case ACESCCT:
+        rgb = acescct_lin(rgb);
+        break;
+    case APPLELOG:
+        rgb = applelog_lin(rgb);
+        break;
+    case LOGC3:
+        rgb = logC3_lin(rgb, params.ei);
+        break;
+    case LOGC4:
+        rgb = logC4_lin(rgb);
+        break;
+    case FILM5:
+        rgb = gen5_lin(rgb);
+        break;
+    case CINEON:
+        rgb = cineon_lin(rgb);
+        break;
+    case DWGINTERMEDIATE:
+        rgb = dwgintermediate_lin(rgb);
+        break;
+    case GAMMA22:
+        rgb = gamma22_lin(rgb);
+        break;
+    case GAMMA24:
+        rgb = gamma24_lin(rgb);
+        break;
+    case GAMMA26:
+        rgb = gamma26_lin(rgb);
+        break;
+    case REC709GAMMA:
+        rgb = rec709_lin(rgb);
+        break;
+    case SRGBGAMMA:
+        rgb = sRGBgamma22_lin(rgb);
+        break;
+    }
+
+    return rgb;
+}
+
+__DEVICE__ float3
+vignette_lin_to_gamma(float3 rgb, struct VignetteParams params)
+{
+    switch (params.gamma) {
+    case LIN:
+        break;
+    case ACESCC:
+        rgb = lin_acescc(rgb);
+        break;
+    case ACESCCT:
+        rgb = lin_acescct(rgb);
+        break;
+    case APPLELOG:
+        rgb = lin_applelog(rgb);
+        break;
+    case LOGC3:
+        rgb = lin_logC3(rgb, params.ei);
+        break;
+    case LOGC4:
+        rgb = lin_logC4(rgb);
+        break;
+    case FILM5:
+        rgb = lin_gen5(rgb);
+        break;
+    case CINEON:
+        rgb = lin_cineon(rgb);
+        break;
+    case DWGINTERMEDIATE:
+        rgb = lin_dwgintermediate(rgb);
+        break;
+    case GAMMA22:
+        rgb = lin_gamma22(rgb);
+        break;
+    case GAMMA24:
+        rgb = lin_gamma24(rgb);
+        break;
+    case GAMMA26:
+        rgb = lin_gamma26(rgb);
+        break;
+    case REC709GAMMA:
+        rgb = lin_rec709(rgb);
+        break;
+    case SRGBGAMMA:
+        rgb = lin_sRGBgamma22(rgb);
+        break;
+    }
+
+    return rgb;
+}
+
+__DEVICE__ float
+vignette_smoothstep(float edge0, float edge1, float x)
+{
+    const float eps = 1e-6f;
+    float span = max_f(edge1 - edge0, eps);
+    float t = clamp_f((x - edge0) / span, 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+}
+
+__DEVICE__ float
+vignette_distance(int p_Width, int p_Height, int p_X, int p_Y, struct VignetteParams params)
+{
+    const float pi = 3.14159265358979323846f;
+    const float eps = 1e-6f;
+
+    float width = max_f((float)p_Width, 1.0f);
+    float height = max_f((float)p_Height, 1.0f);
+    float image_aspect = width / height;
+
+    // Pixel centers, normalized around the optical axis. X is corrected for
+    // image aspect so a circular lens remains circular on a rectangular frame.
+    float x = ((((float)p_X + 0.5f) / width) - 0.5f) * 2.0f * image_aspect;
+    float y = ((((float)p_Y + 0.5f) / height) - 0.5f) * 2.0f;
+
+    // Center controls are expressed in half-frame-height units.
+    x -= params.center_x;
+    y -= params.center_y;
+
+    float radians = params.rotation * (pi / 180.0f);
+    float c = _cosf(radians);
+    float s = _sinf(radians);
+
+    float rx = c * x + s * y;
+    float ry = -s * x + c * y;
+
+    float lens_aspect = max_f(params.aspect, eps);
+
+    // Aspect > 1 stretches the lens field horizontally, useful for anamorphic
+    // and oval image-circle character. Aspect < 1 compresses it horizontally.
+    rx /= lens_aspect;
+
+    return hypot_f(rx, ry);
+}
+
+__DEVICE__ float
+vignette_natural(float r, struct VignetteParams params)
+{
+    const float eps = 1e-6f;
+
+    // A cos^4-inspired illumination model. The exact lens angle is not known,
+    // so Radius controls the scale and Softness controls how gradually the
+    // optical falloff builds from the center toward the image circle.
+    float rr = r / max_f(params.radius, eps);
+    float k = mix_f(0.35f, 1.75f, params.softness);
+    float q = k * rr * rr;
+    float transmission = 1.0f / ((1.0f + q) * (1.0f + q));
+
+    return clamp_f(1.0f - transmission, 0.0f, 1.0f);
+}
+
+__DEVICE__ float
+vignette_classic(float r, struct VignetteParams params)
+{
+    float inner = params.radius;
+    float width = mix_f(0.05f, 1.25f, params.softness);
+    float outer = inner + width;
+    return vignette_smoothstep(inner, outer, r);
+}
+
+__DEVICE__ float
+vignette_anamorphic(float r, struct VignetteParams params)
+{
+    const float eps = 1e-6f;
+    float rr = r / max_f(params.radius, eps);
+    float k = mix_f(0.50f, 2.25f, params.softness);
+    float q = k * rr * rr;
+    float transmission = 1.0f / ((1.0f + q) * (1.0f + q));
+    float falloff = 1.0f - transmission;
+    falloff = falloff * (0.85f + 0.15f * clamp_f(rr, 0.0f, 1.0f));
+    return clamp_f(falloff, 0.0f, 1.0f);
+}
+
+__DEVICE__ float
+vignette_mechanical(float r, struct VignetteParams params)
+{
+    float width = mix_f(0.005f, 0.35f, params.softness);
+    return vignette_smoothstep(params.radius, params.radius + width, r);
+}
+
+__DEVICE__ float
+vignette_falloff(float r, struct VignetteParams params)
+{
+    switch (params.vignette) {
+    case VIGNETTE_CLASSIC:
+        return vignette_classic(r, params);
+    case VIGNETTE_ANAMORPHIC:
+        return vignette_anamorphic(r, params);
+    case VIGNETTE_MECHANICAL:
+        return vignette_mechanical(r, params);
+    case VIGNETTE_NATURAL:
+    default:
+        return vignette_natural(r, params);
+    }
+}
+
+__DEVICE__ float3
+vignette_apply(float3 rgb, float falloff, struct VignetteParams params)
+{
+    falloff = clamp_f(falloff, 0.0f, 1.0f);
+
+    // Vignetting is an exposure loss in linear light. Edge R/G/B are small
+    // relative stop offsets, allowing subtle wavelength-dependent lens shading.
+    float amount_r = max_f(params.amount + params.color_r, 0.0f);
+    float amount_g = max_f(params.amount + params.color_g, 0.0f);
+    float amount_b = max_f(params.amount + params.color_b, 0.0f);
+
+    float3 gain = make_float3(
+        exp2_f(-amount_r * falloff),
+        exp2_f(-amount_g * falloff),
+        exp2_f(-amount_b * falloff));
+
+    return make_float3(rgb.x * gain.x, rgb.y * gain.y, rgb.z * gain.z);
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    struct VignetteParams params;
+    params.gamma = gamma;
+    params.ei = ei;
+    params.vignette = vignette;
+    params.amount = amount;
+    params.radius = radius;
+    params.softness = softness;
+    params.aspect = aspect;
+    params.rotation = rotation;
+    params.center_x = center_x;
+    params.center_y = center_y;
+    params.color_r = color_r;
+    params.color_g = color_g;
+    params.color_b = color_b;
+
+    float3 rgb = make_float3(p_R, p_G, p_B);
+
+    if (params.amount <= 0.0f &&
+        params.color_r == 0.0f &&
+        params.color_g == 0.0f &&
+        params.color_b == 0.0f) {
+        return rgb;
+    }
+
+    float distance = vignette_distance(p_Width, p_Height, p_X, p_Y, params);
+    float falloff = vignette_falloff(distance, params);
+
+    rgb = vignette_gamma_to_lin(rgb, params);
+    rgb = vignette_apply(rgb, falloff, params);
+    rgb = vignette_lin_to_gamma(rgb, params);
+
+    return rgb;
+}

@@ -13,8 +13,8 @@ DEFINE_UI_PARAMS(whitepoint, Whitepoint, DCTLUI_COMBO_BOX, 0, {WPNONE, WPD60D65,
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(labtransform, Lab transform, DCTLUI_CHECK_BOX, 1)
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
-// clang-format on
 
+// clang-format on
 #include "PD-Common.h"
 #include "PD-CIEXYZ.h"
 #include "PD-Aces.h"

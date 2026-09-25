@@ -35,7 +35,7 @@ __DEVICE__ float
 Rec709Curve_rec709_lin(struct Rec709Curve cv, float val)
 {
     return (val < Rec709Curve_lin_rec709(cv, cv.threshold)) ? (val / cv.slope)
-        : pow_f((val + cv.offset) / cv.scale, 1.0f / cv.exp);
+                                                            : pow_f((val + cv.offset) / cv.scale, 1.0f / cv.exp);
 }
 
 // rec709 colorspace

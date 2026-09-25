@@ -63,27 +63,27 @@ tonemap_contrast_gamma26_rec709(float3 rgb)
 __DEVICE__ float3
 tonemap_contrast_sRGB_rec709(float3 rgb)
 {
-    rgb = sRGBgamma22_lin(rgb);        // decode sRGB transfer function to linear
-    rgb = lin_rec709(rgb);             // encode with Rec709 transfer function
-    return pow_f3(rgb, 2.2f / 2.4f);   // experimental appearance adjustment
+    rgb = sRGBgamma22_lin(rgb);       // decode sRGB transfer function to linear
+    rgb = lin_rec709(rgb);            // encode with Rec709 transfer function
+    return pow_f3(rgb, 2.2f / 2.4f);  // experimental appearance adjustment
 }
 
 // Rec709 encoded -> sRGB encoded, with midtone response adjustment
 __DEVICE__ float3
 tonemap_contrast_rec709_sRGB(float3 rgb)
 {
-    rgb = rec709_lin(rgb);             // decode Rec709 transfer function to linear
-    rgb = lin_sRGBgamma22(rgb);         // encode with sRGB transfer function
-    return pow_f3(rgb, 2.4f / 2.2f);   // experimental appearance adjustment
+    rgb = rec709_lin(rgb);            // decode Rec709 transfer function to linear
+    rgb = lin_sRGBgamma22(rgb);       // encode with sRGB transfer function
+    return pow_f3(rgb, 2.4f / 2.2f);  // experimental appearance adjustment
 }
 
 // Rec709 encoded -> gamma 2.6 encoded, with midtone response adjustment
 __DEVICE__ float3
 tonemap_contrast_rec709_gamma26(float3 rgb)
 {
-    rgb = rec709_lin(rgb);             // decode Rec709 transfer function to linear
-    rgb = lin_gamma26(rgb);            // encode with gamma 2.6
-    return pow_f3(rgb, 2.6f / 2.2f);   // experimental appearance adjustment
+    rgb = rec709_lin(rgb);            // decode Rec709 transfer function to linear
+    rgb = lin_gamma26(rgb);           // encode with gamma 2.6
+    return pow_f3(rgb, 2.6f / 2.2f);  // experimental appearance adjustment
 }
 
 // tonecompress reinhard

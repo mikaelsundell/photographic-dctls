@@ -26,10 +26,9 @@ DEFINE_UI_PARAMS(gamma_g, Gamma G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(gamma_b, Gamma B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 1)
 
-// headers
+// clang-format on
 #include "PD-Common.h"
 
-// Grade
 struct Grade
 {
     float3 blackpoint;

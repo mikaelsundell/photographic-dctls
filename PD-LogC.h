@@ -160,7 +160,8 @@ LogC3Curve_lin_logC3(struct LogC3Curve cv, float lin)
 __DEVICE__ float
 LogC3Curve_logC3_lin(struct LogC3Curve cv, float log)
 {
-    float lin = ((log > cv.e * cv.cut + cv.f) ? (pow_f(10.0f, (log - cv.d) / cv.c) - cv.b) / cv.a : (log - cv.f) / cv.e);
+    float lin = ((log > cv.e * cv.cut + cv.f) ? (pow_f(10.0f, (log - cv.d) / cv.c) - cv.b) / cv.a
+                                              : (log - cv.f) / cv.e);
     return lin;
 }
 
