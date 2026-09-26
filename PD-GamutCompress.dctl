@@ -1,14 +1,14 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
+//
 // Luma-axis gamut compression with selectable color space coefficients.
 
 // clang-format off
 DEFINE_UI_PARAMS(colorspace, Colorspace, DCTLUI_COMBO_BOX, 6, {XYZ, ACESAP0, ACESAP1, AWGC3, AWGC4, DWG, REC709, REC2020, SRGB, DCIP3D60, DCIP3, DCIP3D65, GEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, Rec2020 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
-DEFINE_UI_PARAMS(compression_knee, Compression Knee, DCTLUI_SLIDER_FLOAT, 0.90, 0.0, 1.0, 0.001)
-DEFINE_UI_PARAMS(compression_max, Compression Max, DCTLUI_SLIDER_FLOAT, 1.00, 0.0, 1.2, 0.001)
+DEFINE_UI_PARAMS(compression_knee, Compression Knee, DCTLUI_SLIDER_FLOAT, 0.90f, 0.0f, 1.0f, 0.001f)
+DEFINE_UI_PARAMS(compression_max, Compression Max, DCTLUI_SLIDER_FLOAT, 1.00f, 0.0f, 1.2f, 0.001f)
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 
 // clang-format on
@@ -26,108 +26,113 @@ struct GamutCompressParams
     int colorspace;
 };
 
-__DEVICE__ float smooth01(float x)
+__DEVICE__ float
+gamutcompress_smooth01(float x)
 {
     float t = clamp_f(x, 0.0f, 1.0f);
     return t * t * (3.0f - 2.0f * t);
 }
 
-__DEVICE__ float3 gamut_luma_coeff(struct GamutCompressParams params)
+__DEVICE__ float3
+gamutcompress_luma_coeff(struct GamutCompressParams params)
 {
     switch (params.colorspace) {
-        case XYZ:
-            return make_float3(0.0f, 1.0f, 0.0f);
-        case ACESAP0:
-            return acesAP0_y_lum_coeff();
-        case ACESAP1:
-            return acesAP1_y_lum_coeff();
-        case AWGC3:
-            return logc3_y_lum_coeff();
-        case AWGC4:
-            return logc4_y_lum_coeff();
-        case DWG:
-            return dwg_y_lum_coeff();
-        case REC709:
-            return rec709_y_lum_coeff();
-        case REC2020:
-            return rec2020_y_lum_coeff();
-        case SRGB:
-            return sRGB_y_lum_coeff();
-        case DCIP3D60:
-            return dcip3d60_y_lum_coeff();
-        case DCIP3:
-            return dcip3_y_lum_coeff();
-        case DCIP3D65:
-            return dcip3d65_y_lum_coeff();
-        case GEN5:
-            return gen5_y_lum_coeff();
+    case XYZ:
+        return make_float3(0.0f, 1.0f, 0.0f);
+    case ACESAP0:
+        return acesAP0_y_lum_coeff();
+    case ACESAP1:
+        return acesAP1_y_lum_coeff();
+    case AWGC3:
+        return logc3_y_lum_coeff();
+    case AWGC4:
+        return logc4_y_lum_coeff();
+    case DWG:
+        return dwg_y_lum_coeff();
+    case REC709:
+        return rec709_y_lum_coeff();
+    case REC2020:
+        return rec2020_y_lum_coeff();
+    case SRGB:
+        return sRGB_y_lum_coeff();
+    case DCIP3D60:
+        return dcip3d60_y_lum_coeff();
+    case DCIP3:
+        return dcip3_y_lum_coeff();
+    case DCIP3D65:
+        return dcip3d65_y_lum_coeff();
+    case GEN5:
+        return gen5_y_lum_coeff();
     }
 
     return rec709_y_lum_coeff();
 }
 
-__DEVICE__ float max_chroma_scale_to_cube(float3 gray, float3 chroma)
+__DEVICE__ float
+gamutcompress_max_chroma_scale(float3 gray, float3 chroma)
 {
     const float eps = 1e-6f;
     float scale = 1e10f;
 
     if (chroma.x > eps) {
         scale = min_f(scale, (1.0f - gray.x) / chroma.x);
-    } else if (chroma.x < -eps) {
-        scale = min_f(scale, (0.0f - gray.x) / chroma.x);
+    }
+    else if (chroma.x < -eps) {
+        scale = min_f(scale, -gray.x / chroma.x);
     }
 
     if (chroma.y > eps) {
         scale = min_f(scale, (1.0f - gray.y) / chroma.y);
-    } else if (chroma.y < -eps) {
-        scale = min_f(scale, (0.0f - gray.y) / chroma.y);
+    }
+    else if (chroma.y < -eps) {
+        scale = min_f(scale, -gray.y / chroma.y);
     }
 
     if (chroma.z > eps) {
         scale = min_f(scale, (1.0f - gray.z) / chroma.z);
-    } else if (chroma.z < -eps) {
-        scale = min_f(scale, (0.0f - gray.z) / chroma.z);
+    }
+    else if (chroma.z < -eps) {
+        scale = min_f(scale, -gray.z / chroma.z);
     }
 
     return max_f(scale, 0.0f);
 }
 
-__DEVICE__ float compress_ratio(float ratio, float knee, float maxRatio)
+__DEVICE__ float
+gamutcompress_ratio(float ratio, float knee, float max_ratio)
 {
     knee = clamp_f(knee, 0.0f, 1.0f);
-    maxRatio = clamp_f(maxRatio, 0.0f, 1.2f);
+    max_ratio = clamp_f(max_ratio, 0.0f, 1.2f);
 
     if (ratio <= knee) {
         return ratio;
     }
 
     float t = (ratio - knee) / max_f(1.0f - knee, 1e-6f);
-    float e = smooth01(t);
-
-    return knee + (maxRatio - knee) * e;
+    float e = gamutcompress_smooth01(t);
+    return knee + (max_ratio - knee) * e;
 }
 
-__DEVICE__ float3 compress_gamut(float3 rgb, float knee, float maxRatio, struct GamutCompressParams params)
+__DEVICE__ float3
+gamutcompress_apply(float3 rgb, float knee, float max_ratio, struct GamutCompressParams params)
 {
-    float3 coeff = gamut_luma_coeff(params);
-
+    float3 coeff = gamutcompress_luma_coeff(params);
     float Y = rgb.x * coeff.x + rgb.y * coeff.y + rgb.z * coeff.z;
     Y = clamp_f(Y, 0.0f, 1.0f);
 
     float3 gray = make_float3(Y, Y, Y);
     float3 chroma = rgb - gray;
+    float boundary_scale = gamutcompress_max_chroma_scale(gray, chroma);
 
-    float boundaryScale = max_chroma_scale_to_cube(gray, chroma);
-
-    if (boundaryScale >= 1e9f) {
+    if (boundary_scale >= 1e9f) {
         return rgb;
     }
 
-    float ratio = 1.0f / max_f(boundaryScale, 1e-6f);
-    float compressedRatio = compress_ratio(ratio, knee, maxRatio);
-    float chromaScale = compressedRatio / max_f(ratio, 1e-6f);
+    float ratio = 1.0f / max_f(boundary_scale, 1e-6f);
+    float compressed_ratio = gamutcompress_ratio(ratio, knee, max_ratio);
+    float chroma_scale = compressed_ratio / max_f(ratio, 1e-6f);
 
-    return gray + chroma * chromaScale;
+    return gray + chroma * chroma_scale;
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
@@ -137,7 +142,7 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     struct GamutCompressParams params;
     params.colorspace = colorspace;
 
-    rgb = compress_gamut(rgb, compression_knee, compression_max, params);
+    rgb = gamutcompress_apply(rgb, compression_knee, compression_max, params);
 
     if (adjustdisplay) {
         rgb = adjust_display(rgb);

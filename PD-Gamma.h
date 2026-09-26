@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
-// gamma curve
+// Gamma transfer curve.
 struct GammaCurve {
     float exp;
 };
@@ -24,12 +22,12 @@ GammaCurve_lin_gamma(struct GammaCurve cv, float lin)
 }
 
 __DEVICE__ float
-GammaCurve_gamma_lin(struct GammaCurve cv, float val)
+GammaCurve_gamma_lin(struct GammaCurve cv, float value)
 {
-    return pow_f(max_f(val, 0.0f), cv.exp);
+    return pow_f(max_f(value, 0.0f), cv.exp);
 }
 
-// convert linear to gamma
+// linear -> gamma
 __DEVICE__ float3
 lin_gamma(float3 rgb, float exp)
 {
@@ -38,7 +36,7 @@ lin_gamma(float3 rgb, float exp)
                        GammaCurve_lin_gamma(cv, rgb.z));
 }
 
-// convert gamma to linear
+// gamma -> linear
 __DEVICE__ float3
 gamma_lin(float3 rgb, float exp)
 {
@@ -47,42 +45,42 @@ gamma_lin(float3 rgb, float exp)
                        GammaCurve_gamma_lin(cv, rgb.z));
 }
 
-// convert linear to gamma 2.2
+// linear -> gamma 2.2
 __DEVICE__ float3
 lin_gamma22(float3 rgb)
 {
     return lin_gamma(rgb, 2.2f);
 }
 
-// convert gamma 2.2 to linear
+// gamma 2.2 -> linear
 __DEVICE__ float3
 gamma22_lin(float3 rgb)
 {
     return gamma_lin(rgb, 2.2f);
 }
 
-// convert linear to gamma 2.4
+// linear -> gamma 2.4
 __DEVICE__ float3
 lin_gamma24(float3 rgb)
 {
     return lin_gamma(rgb, 2.4f);
 }
 
-// convert gamma 2.4 to linear
+// gamma 2.4 -> linear
 __DEVICE__ float3
 gamma24_lin(float3 rgb)
 {
     return gamma_lin(rgb, 2.4f);
 }
 
-// convert linear to gamma 2.6
+// linear -> gamma 2.6
 __DEVICE__ float3
 lin_gamma26(float3 rgb)
 {
     return lin_gamma(rgb, 2.6f);
 }
 
-// convert gamma 2.6 to linear
+// gamma 2.6 -> linear
 __DEVICE__ float3
 gamma26_lin(float3 rgb)
 {

@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
-// sRGB curve
+// sRGB transfer curve
 struct sRGBCurve {
     float threshold;
     float slope;
@@ -28,14 +26,13 @@ sRGB_curve()
 __DEVICE__ float
 sRGBCurve_lin_sRGB(struct sRGBCurve cv, float lin)
 {
-    return (lin <= cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, 1.0f / cv.exp)) - cv.offset;
+    return lin <= cv.threshold ? lin * cv.slope : cv.scale * pow_f(lin, 1.0f / cv.exp) - cv.offset;
 }
 
 __DEVICE__ float
 sRGBCurve_sRGB_lin(struct sRGBCurve cv, float val)
 {
-    return (val <= sRGBCurve_lin_sRGB(cv, cv.threshold)) ? (val / cv.slope)
-                                                         : pow_f((val + cv.offset) / cv.scale, cv.exp);
+    return val <= sRGBCurve_lin_sRGB(cv, cv.threshold) ? val / cv.slope : pow_f((val + cv.offset) / cv.scale, cv.exp);
 }
 
 // sRGB colorspace
@@ -49,18 +46,19 @@ sRGBColorspace_xyz_sRGB(struct sRGBColorspace cs, float3 xyz)
 {
     return mult_matrix(xyz, cs.sRGB_matrix);
 }
+
 __DEVICE__ float3
-sRGBColorspace_sRGB_xyz(struct sRGBColorspace cs, float3 sRGB)
+sRGBColorspace_sRGB_xyz(struct sRGBColorspace cs, float3 rgb)
 {
-    return mult_matrix(sRGB, cs.xyz_matrix);
+    return mult_matrix(rgb, cs.xyz_matrix);
 }
 
 __DEVICE__ struct sRGBColorspace
 sRGB_colorspace()
 {
     struct sRGBColorspace cs;
+
     // colortool --inputcolorspace sRGB -v
-    // convert from xyz to sRGB matrix
     cs.sRGB_matrix.m00 = 3.2406f;
     cs.sRGB_matrix.m01 = -1.5372f;
     cs.sRGB_matrix.m02 = -0.4986f;
@@ -70,7 +68,7 @@ sRGB_colorspace()
     cs.sRGB_matrix.m06 = 0.0557f;
     cs.sRGB_matrix.m07 = -0.2040f;
     cs.sRGB_matrix.m08 = 1.0570f;
-    // convert sRGB to xyz matrix
+
     cs.xyz_matrix.m00 = 0.4124f;
     cs.xyz_matrix.m01 = 0.3576f;
     cs.xyz_matrix.m02 = 0.1805f;
@@ -80,6 +78,7 @@ sRGB_colorspace()
     cs.xyz_matrix.m06 = 0.0193f;
     cs.xyz_matrix.m07 = 0.1192f;
     cs.xyz_matrix.m08 = 0.9505f;
+
     return cs;
 }
 
@@ -90,7 +89,7 @@ sRGB_y_lum_coeff()
     return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
 }
 
-// convert linear to sRGB gamma ~2.2
+// linear -> sRGB
 __DEVICE__ float3
 lin_sRGBgamma22(float3 rgb)
 {
@@ -98,7 +97,7 @@ lin_sRGBgamma22(float3 rgb)
     return make_float3(sRGBCurve_lin_sRGB(cv, rgb.x), sRGBCurve_lin_sRGB(cv, rgb.y), sRGBCurve_lin_sRGB(cv, rgb.z));
 }
 
-// convert sRGB gamma ~2.2 to linear
+// sRGB -> linear
 __DEVICE__ float3
 sRGBgamma22_lin(float3 rgb)
 {
@@ -106,16 +105,15 @@ sRGBgamma22_lin(float3 rgb)
     return make_float3(sRGBCurve_sRGB_lin(cv, rgb.x), sRGBCurve_sRGB_lin(cv, rgb.y), sRGBCurve_sRGB_lin(cv, rgb.z));
 }
 
-// convert xyz to sRGB
+// XYZ -> sRGB
 __DEVICE__ float3
-xyz_sRGB(float3 rgb)
+xyz_sRGB(float3 xyz)
 {
     struct sRGBColorspace cs = sRGB_colorspace();
-    float3 sRGB = sRGBColorspace_xyz_sRGB(cs, rgb);
-    return sRGB;
+    return sRGBColorspace_xyz_sRGB(cs, xyz);
 }
 
-// convert sRGB to xyz
+// sRGB -> XYZ
 __DEVICE__ float3
 sRGB_xyz(float3 rgb)
 {

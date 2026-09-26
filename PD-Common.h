@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
 // roi
 struct ROI {
     int x1, x2, y1, y2;
@@ -176,8 +174,11 @@ mix_f3(float3 x, float3 y, float a)
 __DEVICE__ float3
 div_3f(float3 x, float3 y)
 {
-    float eps = 1e-7f;
-    float3 ey = max_f3(y, eps);
+    const float eps = 1e-7f;
+    float3 ey = y;
+    ey.x = abs_f(ey.x) < eps ? (ey.x < 0.0f ? -eps : eps) : ey.x;
+    ey.y = abs_f(ey.y) < eps ? (ey.y < 0.0f ? -eps : eps) : ey.y;
+    ey.z = abs_f(ey.z) < eps ? (ey.z < 0.0f ? -eps : eps) : ey.z;
     return x / ey;
 }
 
@@ -185,6 +186,42 @@ __DEVICE__ float
 atan2_f(float y, float x)
 {
     return _atan2f(y, x);
+}
+
+__DEVICE__ float
+sin_f(float value)
+{
+    return _sinf(value);
+}
+
+__DEVICE__ float
+cos_f(float value)
+{
+    return _cosf(value);
+}
+
+__DEVICE__ float
+tan_f(float value)
+{
+    return _tanf(value);
+}
+
+__DEVICE__ float
+asin_f(float value)
+{
+    return _asinf(value);
+}
+
+__DEVICE__ float
+acos_f(float value)
+{
+    return _acosf(value);
+}
+
+__DEVICE__ float
+atan_f(float value)
+{
+    return _atanf(value);
 }
 
 // matrix math
@@ -301,10 +338,10 @@ rgb_hsv(float3 rgb)
         H = 0.0f;
     }
     else if (r >= g && r >= b) {
-        H = mod_f((g - b) / delta + 6.0f, (6.0f));
+        H = mod_f((g - b) / delta + 6.0f, 6.0f);
     }
     else if (g >= r && g >= b) {
-        H = (b - r) / delta + (2.0f);
+        H = (b - r) / delta + 2.0f;
     }
     else {
         H = (r - g) / delta + 4.0f;
@@ -326,7 +363,7 @@ rgb_hsv(float3 rgb)
 __DEVICE__ float3
 hsl_rgb(float3 hsl)
 {
-    float h = hsl.x / 360.0f;  // Convert h to [0, 1] range
+    float h = hsl.x / 360.0f;
     float s = hsl.y;
     float l = hsl.z;
     float c = (1.0f - abs_f(2.0f * l - 1.0f)) * s;
@@ -367,13 +404,13 @@ rgb_hsl(float3 rgb)
     float h, s, l;
     l = (max + min) / 2.0f;
     float delta = max - min;
-    if (delta == 0) {
-        h = s = 0;  // achromatic
+    if (delta == 0.0f) {
+        h = s = 0.0f;
     }
     else {
         s = l > 0.5f ? delta / (2.0f - max - min) : delta / (max + min);
         if (max == r) {
-            h = (g - b) / delta + (g < b ? 6.0f : 0);
+            h = (g - b) / delta + (g < b ? 6.0f : 0.0f);
         }
         else if (max == g) {
             h = (b - r) / delta + 2.0f;
@@ -383,5 +420,5 @@ rgb_hsl(float3 rgb)
         }
         h /= 6.0f;
     }
-    return make_float3(h * 360.0f, s, l);  // H in [0, 360], S and L in [0, 1]
+    return make_float3(h * 360.0f, s, l);
 }

@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
-// dwg curve
+// DWG Intermediate transfer curve.
 struct DWGCurve {
     float a;
     float b;
@@ -30,16 +28,16 @@ dwg_curve()
 __DEVICE__ float
 DWGCurve_lin_dwg(struct DWGCurve cv, float lin)
 {
-    return (lin > cv.lin_cut) ? (log2_f(lin + cv.a) + cv.b) * cv.c : lin * cv.m;
+    return lin > cv.lin_cut ? (log2_f(lin + cv.a) + cv.b) * cv.c : lin * cv.m;
 }
 
 __DEVICE__ float
-DWGCurve_dwg_lin(struct DWGCurve cv, float val)
+DWGCurve_dwg_lin(struct DWGCurve cv, float value)
 {
-    return (val > cv.log_cut) ? pow_f(2.0f, (val / cv.c) - cv.b) - cv.a : (val / cv.m);
+    return value > cv.log_cut ? pow_f(2.0f, value / cv.c - cv.b) - cv.a : value / cv.m;
 }
 
-// dwg colorspace
+// DWG colorspace
 struct DWGColorspace {
     struct Matrix dwg_matrix;
     struct Matrix xyz_matrix;
@@ -50,18 +48,19 @@ DWGColorspace_xyz_dwg(struct DWGColorspace cs, float3 xyz)
 {
     return mult_matrix(xyz, cs.dwg_matrix);
 }
+
 __DEVICE__ float3
-DWGColorspace_dwg_xyz(struct DWGColorspace cs, float3 dwg)
+DWGColorspace_dwg_xyz(struct DWGColorspace cs, float3 rgb)
 {
-    return mult_matrix(dwg, cs.xyz_matrix);
+    return mult_matrix(rgb, cs.xyz_matrix);
 }
 
 __DEVICE__ struct DWGColorspace
 dwg_colorspace()
 {
     struct DWGColorspace cs;
+
     // colortool --inputcolorspace DWG -v
-    // convert xyz to dwg matrix
     cs.dwg_matrix.m00 = 1.516672f;
     cs.dwg_matrix.m01 = -0.281478f;
     cs.dwg_matrix.m02 = -0.146964f;
@@ -71,7 +70,7 @@ dwg_colorspace()
     cs.dwg_matrix.m06 = 0.064849f;
     cs.dwg_matrix.m07 = 0.109139f;
     cs.dwg_matrix.m08 = 0.761415f;
-    // convert dwg to xyz matrix
+
     cs.xyz_matrix.m00 = 0.700622f;
     cs.xyz_matrix.m01 = 0.148775f;
     cs.xyz_matrix.m02 = 0.101059f;
@@ -81,6 +80,7 @@ dwg_colorspace()
     cs.xyz_matrix.m06 = -0.098963f;
     cs.xyz_matrix.m07 = -0.137895f;
     cs.xyz_matrix.m08 = 1.325916f;
+
     return cs;
 }
 
@@ -91,7 +91,7 @@ dwg_y_lum_coeff()
     return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
 }
 
-// convert linear to dwg intermediate
+// linear -> DWG Intermediate
 __DEVICE__ float3
 lin_dwgintermediate(float3 rgb)
 {
@@ -99,7 +99,7 @@ lin_dwgintermediate(float3 rgb)
     return make_float3(DWGCurve_lin_dwg(cv, rgb.x), DWGCurve_lin_dwg(cv, rgb.y), DWGCurve_lin_dwg(cv, rgb.z));
 }
 
-// convert dwg intermediate to linear
+// DWG Intermediate -> linear
 __DEVICE__ float3
 dwgintermediate_lin(float3 rgb)
 {
@@ -107,16 +107,15 @@ dwgintermediate_lin(float3 rgb)
     return make_float3(DWGCurve_dwg_lin(cv, rgb.x), DWGCurve_dwg_lin(cv, rgb.y), DWGCurve_dwg_lin(cv, rgb.z));
 }
 
-// convert xyz to dwg
+// XYZ -> DWG
 __DEVICE__ float3
-xyz_dwg(float3 rgb)
+xyz_dwg(float3 xyz)
 {
     struct DWGColorspace cs = dwg_colorspace();
-    float3 dwg = DWGColorspace_xyz_dwg(cs, rgb);
-    return dwg;
+    return DWGColorspace_xyz_dwg(cs, xyz);
 }
 
-// convert dwg to xyz
+// DWG -> XYZ
 __DEVICE__ float3
 dwg_xyz(float3 rgb)
 {

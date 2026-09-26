@@ -1,8 +1,8 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
-// Convert between legal/video range and full/data range.
+//
+// Convert between legal and full range.
 
 // clang-format off
 DEFINE_UI_PARAMS(direction, Direction, DCTLUI_COMBO_BOX, 0, {LEGALFULL, FULLLEGAL}, {Legal to Full, Full to Legal})
@@ -18,88 +18,89 @@ struct RangeParams
     int bitdepth;
 };
 
-__DEVICE__ float bit_max_value(struct RangeParams params)
+__DEVICE__ float
+range_bit_max_value(struct RangeParams params)
 {
     switch (params.bitdepth) {
-        case BIT8:
-            return 255.0f;
-        case BIT10:
-            return 1023.0f;
-        case BIT12:
-            return 4095.0f;
+    case BIT8:
+        return 255.0f;
+    case BIT10:
+        return 1023.0f;
+    case BIT12:
+        return 4095.0f;
     }
 
     return 1023.0f;
 }
 
-__DEVICE__ float legal_min_code(struct RangeParams params)
+__DEVICE__ float
+range_legal_min_code(struct RangeParams params)
 {
     switch (params.bitdepth) {
-        case BIT8:
-            return 16.0f;
-        case BIT10:
-            return 64.0f;
-        case BIT12:
-            return 256.0f;
+    case BIT8:
+        return 16.0f;
+    case BIT10:
+        return 64.0f;
+    case BIT12:
+        return 256.0f;
     }
 
     return 64.0f;
 }
 
-__DEVICE__ float legal_max_code(struct RangeParams params)
+__DEVICE__ float
+range_legal_max_code(struct RangeParams params)
 {
     switch (params.bitdepth) {
-        case BIT8:
-            return 235.0f;
-        case BIT10:
-            return 940.0f;
-        case BIT12:
-            return 3760.0f;
+    case BIT8:
+        return 235.0f;
+    case BIT10:
+        return 940.0f;
+    case BIT12:
+        return 3760.0f;
     }
 
     return 940.0f;
 }
 
-__DEVICE__ float legal_min_value(struct RangeParams params)
+__DEVICE__ float
+range_legal_min_value(struct RangeParams params)
 {
-    return legal_min_code(params) / bit_max_value(params);
+    return range_legal_min_code(params) / range_bit_max_value(params);
 }
 
-__DEVICE__ float legal_max_value(struct RangeParams params)
+__DEVICE__ float
+range_legal_max_value(struct RangeParams params)
 {
-    return legal_max_code(params) / bit_max_value(params);
+    return range_legal_max_code(params) / range_bit_max_value(params);
 }
 
-__DEVICE__ float full_to_legal_f(float value, struct RangeParams params)
+__DEVICE__ float
+range_full_to_legal_f(float value, struct RangeParams params)
 {
-    float minLegal = legal_min_value(params);
-    float maxLegal = legal_max_value(params);
-
+    float minLegal = range_legal_min_value(params);
+    float maxLegal = range_legal_max_value(params);
     return value * (maxLegal - minLegal) + minLegal;
 }
 
-__DEVICE__ float legal_to_full_f(float value, struct RangeParams params)
+__DEVICE__ float
+range_legal_to_full_f(float value, struct RangeParams params)
 {
-    float minLegal = legal_min_value(params);
-    float maxLegal = legal_max_value(params);
-
+    float minLegal = range_legal_min_value(params);
+    float maxLegal = range_legal_max_value(params);
     return (value - minLegal) / (maxLegal - minLegal);
 }
 
-__DEVICE__ float3 full_to_legal_f3(float3 rgb, struct RangeParams params)
+__DEVICE__ float3
+range_full_to_legal_f3(float3 rgb, struct RangeParams params)
 {
-    return make_float3(
-        full_to_legal_f(rgb.x, params),
-        full_to_legal_f(rgb.y, params),
-        full_to_legal_f(rgb.z, params));
+    return make_float3(range_full_to_legal_f(rgb.x, params), range_full_to_legal_f(rgb.y, params), range_full_to_legal_f(rgb.z, params));
 }
 
-__DEVICE__ float3 legal_to_full_f3(float3 rgb, struct RangeParams params)
+__DEVICE__ float3
+range_legal_to_full_f3(float3 rgb, struct RangeParams params)
 {
-    return make_float3(
-        legal_to_full_f(rgb.x, params),
-        legal_to_full_f(rgb.y, params),
-        legal_to_full_f(rgb.z, params));
+    return make_float3(range_legal_to_full_f(rgb.x, params), range_legal_to_full_f(rgb.y, params), range_legal_to_full_f(rgb.z, params));
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
@@ -111,12 +112,12 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.bitdepth = bitdepth;
 
     switch (params.direction) {
-        case LEGALFULL:
-            rgb = legal_to_full_f3(rgb, params);
-            break;
-        case FULLLEGAL:
-            rgb = full_to_legal_f3(rgb, params);
-            break;
+    case LEGALFULL:
+        rgb = range_legal_to_full_f3(rgb, params);
+        break;
+    case FULLLEGAL:
+        rgb = range_full_to_legal_f3(rgb, params);
+        break;
     }
 
     if (adjustdisplay) {

@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
-// applelog curve
 struct AppleLogCurve {
     float r0;
     float rt;
@@ -32,18 +29,18 @@ applelog_curve()
 __DEVICE__ float
 AppleLogCurve_lin_applelog(struct AppleLogCurve cv, float lin)
 {
-    return (lin >= cv.rt) ? cv.gamma * log2_f(max_f(lin + cv.beta, 1e-8f)) + cv.delta
-                          : cv.c * (lin - cv.r0) * (lin - cv.r0);
+    return lin >= cv.rt ? cv.gamma * log2_f(max_f(lin + cv.beta, 1e-8f)) + cv.delta
+                        : cv.c * (lin - cv.r0) * (lin - cv.r0);
 }
 
 __DEVICE__ float
-AppleLogCurve_applelog_lin(struct AppleLogCurve cv, float val)
+AppleLogCurve_applelog_lin(struct AppleLogCurve cv, float value)
 {
-    return (val >= cv.log_cut) ? pow_f(2.0f, (val - cv.delta) / cv.gamma) - cv.beta
-                               : cv.r0 + pow_f(max_f(val / cv.c, 0.0f), 0.5f);
+    return value >= cv.log_cut ? pow_f(2.0f, (value - cv.delta) / cv.gamma) - cv.beta
+                               : cv.r0 + pow_f(max_f(value / cv.c, 0.0f), 0.5f);
 }
 
-// convert linear to apple log
+// linear -> Apple Log
 __DEVICE__ float3
 lin_applelog(float3 rgb)
 {
@@ -52,7 +49,7 @@ lin_applelog(float3 rgb)
                        AppleLogCurve_lin_applelog(cv, rgb.z));
 }
 
-// convert apple log to linear
+// Apple Log -> linear
 __DEVICE__ float3
 applelog_lin(float3 rgb)
 {

@@ -1,12 +1,11 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
-// Color space transformations to and from CIE XYZ linear, tone compression,
-// display contrast and whitepoint adaptation.
+//
+// Color space and transfer function conversion.
 
 // clang-format off
-DEFINE_UI_PARAMS(convert, Convert, DCTLUI_COMBO_BOX, 0, {CVTNONE, CVTYCBCRREC709, CVTREC709YCBCR}, {None, YCbCr to Rec709/Gamma2.4, Rec709/Gamma2.4 to YCbCr});
+DEFINE_UI_PARAMS(convert, Convert, DCTLUI_COMBO_BOX, 0, {CVTNONE, CVTYCBCRREC709, CVTREC709YCBCR}, {None, YCbCr to Rec709/Gamma2.4, Rec709/Gamma2.4 to YCbCr})
 DEFINE_UI_PARAMS(inputcolorspace, Input colorspace, DCTLUI_COMBO_BOX, 0, {INXYZ, INACESAP0, INACESAP1, INAWGC3, INAWGC4, INGEN5, INDWG, INDCIP3D60, INDCIP3D65, INDCIP3, INREC2020, INREC709, INSRGB}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, Blackmagic Gen5 D65, DaVinci Wide Gamut D65, DCI-P3 'D60 sim' D60, DCI-P3 D65, DCI-P3 Theatrical D63, Rec2020 D65, Rec709 D65, sRGB D65})
 DEFINE_UI_PARAMS(inputgamma, Input gamma, DCTLUI_COMBO_BOX, 0, {INLIN, INACESCC, INACESCCT, INAPPLELOG, INLOGC3, INLOGC4, INFILM5, INCINEON, INDWGINTERMEDIATE, INGAMMA22, INGAMMA24, INGAMMA26, INREC709GAMMA, INSRGBGAMMA}, {Linear, AcesCC, AcesCCT, Apple Log, ARRI LogC3, ARRI LogC4, Blackmagic Film, Cineon, DaVinci Intermediate, Gamma2.2, Gamma2.4, Gamma2.6, Rec709, sRGB})
 DEFINE_UI_PARAMS(outputcolorspace, Output colorspace, DCTLUI_COMBO_BOX, 0, {OUTXYZ, OUTACESAP0, OUTACESAP1, OUTAWGC3, OUTAWGC4, OUTGEN5, OUTDWG, OUTDCIP3D60, OUTDCIP3D65, OUTDCIP3, OUTREC2020, OUTREC709, OUTSRGB}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, Blackmagic Gen5 D65, DaVinci Wide Gamut D65, DCI-P3 'D60 sim' D60, DCI-P3 D65, DCI-P3 Theatrical D63, Rec2020 D65, Rec709 D65, sRGB D65})
@@ -34,13 +33,11 @@ DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 #include "PD-Tonemap.h"
 #include "PD-Whitepoint.h"
 
-__DEVICE__ float3
-transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
 
-    // XYZ uses Y directly as luminance. Output RGB colorspaces replace this
-    // with their corresponding luminance coefficients below.
+    // XYZ luminance uses Y.
     float3 lumcoeff = make_float3(0.0f, 1.0f, 0.0f);
 
     // convert
@@ -140,20 +137,20 @@ transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, flo
         }
     }
 
-    // whitepoint adaptation
+    // whitepoint
     switch (whitepoint) {
-        case WPD60D65:
-            rgb = d60_d65_adaptation(rgb);
-            break;
-        case WPD63D65:
-            rgb = d63_d65_adaptation(rgb);
-            break;
-        case WPD65D60:
-            rgb = d65_d60_adaptation(rgb);
-            break;
-        case WPD65D63:
-            rgb = d65_d63_adaptation(rgb);
-            break;
+    case WPD60D65:
+        rgb = d60_d65_adaptation(rgb);
+        break;
+    case WPD63D65:
+        rgb = d63_d65_adaptation(rgb);
+        break;
+    case WPD65D60:
+        rgb = d65_d60_adaptation(rgb);
+        break;
+    case WPD65D63:
+        rgb = d65_d63_adaptation(rgb);
+        break;
     }
 
     // output colorspace
@@ -264,18 +261,18 @@ transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, flo
 
     // tone contrast
     switch (tonecontrast) {
-        case TCTGAMMA26REC709:
-            rgb = tonemap_contrast_gamma26_rec709(rgb);
-            break;
-        case TCTSRGBREC709:
-            rgb = tonemap_contrast_sRGB_rec709(rgb);
-            break;
-        case TCTREC709SRGB:
-            rgb = tonemap_contrast_rec709_sRGB(rgb);
-            break;
-        case TCTREC709GAMMA26:
-            rgb = tonemap_contrast_rec709_gamma26(rgb);
-            break;
+    case TCTGAMMA26REC709:
+        rgb = tonemap_contrast_gamma26_rec709(rgb);
+        break;
+    case TCTSRGBREC709:
+        rgb = tonemap_contrast_sRGB_rec709(rgb);
+        break;
+    case TCTREC709SRGB:
+        rgb = tonemap_contrast_rec709_sRGB(rgb);
+        break;
+    case TCTREC709GAMMA26:
+        rgb = tonemap_contrast_rec709_gamma26(rgb);
+        break;
     }
 
     if (adjustdisplay) {

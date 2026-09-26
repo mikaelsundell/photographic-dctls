@@ -1,21 +1,23 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
+//
+// Printer points and RGB trims in linear light.
 
 // clang-format off
 DEFINE_UI_PARAMS(logc, LogC, DCTLUI_COMBO_BOX, 0, {LOGC3, LOGC4}, {LogC3, LogC4})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
-DEFINE_UI_PARAMS(cpoints, C points, DCTLUI_SLIDER_FLOAT, 25, 0, 50, 0.1) // Cyan   points (affects Red)
-DEFINE_UI_PARAMS(mpoints, M points, DCTLUI_SLIDER_FLOAT, 25, 0, 50, 0.1) // Magenta points (affects Green)
-DEFINE_UI_PARAMS(ypoints, Y points, DCTLUI_SLIDER_FLOAT, 25, 0, 50, 0.1) // Yellow  points (affects Blue)
-DEFINE_UI_PARAMS(wpoints, W points, DCTLUI_SLIDER_FLOAT, 25, 0, 50, 0.1) // White (master) points
-DEFINE_UI_PARAMS(rtrim, R trim, DCTLUI_SLIDER_FLOAT, 25, 0, 50, 0.1) // +R adds Red, -R cuts Red
-DEFINE_UI_PARAMS(gtrim, G trim, DCTLUI_SLIDER_FLOAT, 25, 0, 50, 0.1) // +G adds Green, -G cuts Green
-DEFINE_UI_PARAMS(btrim, B trim, DCTLUI_SLIDER_FLOAT, 25, 0, 50, 0.1) // +B adds Blue, -B cuts Blue
+DEFINE_UI_PARAMS(cpoints, C points, DCTLUI_SLIDER_FLOAT, 25.0f, 0.0f, 50.0f, 0.1f)
+DEFINE_UI_PARAMS(mpoints, M points, DCTLUI_SLIDER_FLOAT, 25.0f, 0.0f, 50.0f, 0.1f)
+DEFINE_UI_PARAMS(ypoints, Y points, DCTLUI_SLIDER_FLOAT, 25.0f, 0.0f, 50.0f, 0.1f)
+DEFINE_UI_PARAMS(wpoints, W points, DCTLUI_SLIDER_FLOAT, 25.0f, 0.0f, 50.0f, 0.1f)
+DEFINE_UI_PARAMS(rtrim, R trim, DCTLUI_SLIDER_FLOAT, 25.0f, 0.0f, 50.0f, 0.1f)
+DEFINE_UI_PARAMS(gtrim, G trim, DCTLUI_SLIDER_FLOAT, 25.0f, 0.0f, 50.0f, 0.1f)
+DEFINE_UI_PARAMS(btrim, B trim, DCTLUI_SLIDER_FLOAT, 25.0f, 0.0f, 50.0f, 0.1f)
 DEFINE_UI_PARAMS(mapprinterlights, Use printer points, DCTLUI_CHECK_BOX, 1)
 DEFINE_UI_PARAMS(maptrims, Use trims, DCTLUI_CHECK_BOX, 1)
-
 // clang-format on
+
 #include "PD-Common.h"
 #include "PD-LogC.h"
 
@@ -34,50 +36,56 @@ struct PrinterPointsParams
     int maptrims;
 };
 
-__DEVICE__ inline float pointsgain(float points_delta)
+__DEVICE__ inline float
+printerpoints_gain(float points_delta)
 {
-    // 12 points = 1 stop
-    const float points_per_stop = 12.0f;
-    return exp2_f(points_delta / points_per_stop);
+    // 12 points = 1 stop.
+    return exp2_f(points_delta / 12.0f);
 }
 
-__DEVICE__ float3 printerpoints(float3 lin_rgb, struct PrinterPointsParams params)
+__DEVICE__ float3
+printerpoints_apply(float3 rgb, struct PrinterPointsParams params)
 {
-    // neutral is 25
     float dc = params.cpoints - 25.0f;
     float dm = params.mpoints - 25.0f;
     float dy = params.ypoints - 25.0f;
     float dw = params.wpoints - 25.0f;
-    // white/master gain first (negative delta = cut)
-    // For CMY: Cyan cuts Red, Magenta cuts Green, Yellow cuts Blue
-    // So channel gains are master * cuts from complementary dyes
-    float gw = pointsgain(-dw);
-    float gr = gw * pointsgain(-dc);
-    float gg = gw * pointsgain(-dm);
-    float gb = gw * pointsgain(-dy);
-    float3 out = make_float3(lin_rgb.x * gr, lin_rgb.y * gg, lin_rgb.z * gb);
-    // avoid denorms / divide-by-zero
+
+    // CMY points act on complementary RGB channels.
+    float gw = printerpoints_gain(-dw);
+    float gr = gw * printerpoints_gain(-dc);
+    float gg = gw * printerpoints_gain(-dm);
+    float gb = gw * printerpoints_gain(-dy);
+
+    float3 result = make_float3(rgb.x * gr, rgb.y * gg, rgb.z * gb);
+
     const float eps = 1e-8f;
-    out.x = max_f(out.x, eps);
-    out.y = max_f(out.y, eps);
-    out.z = max_f(out.z, eps);
-    return out;
+    result.x = max_f(result.x, eps);
+    result.y = max_f(result.y, eps);
+    result.z = max_f(result.z, eps);
+
+    return result;
 }
 
-__DEVICE__ float3 rgbtrims(float3 linrgb, struct PrinterPointsParams params)
+__DEVICE__ float3
+printerpoints_trims(float3 rgb, struct PrinterPointsParams params)
 {
     float dr = params.rtrim - 25.0f;
     float dg = params.gtrim - 25.0f;
     float db = params.btrim - 25.0f;
-    float gr = pointsgain(dr);
-    float gg = pointsgain(dg);
-    float gb = pointsgain(db);
-    float3 out = make_float3(linrgb.x * gr, linrgb.y * gg, linrgb.z * gb);
+
+    float gr = printerpoints_gain(dr);
+    float gg = printerpoints_gain(dg);
+    float gb = printerpoints_gain(db);
+
+    float3 result = make_float3(rgb.x * gr, rgb.y * gg, rgb.z * gb);
+
     const float eps = 1e-8f;
-    out.x = max_f(out.x, eps);
-    out.y = max_f(out.y, eps);
-    out.z = max_f(out.z, eps);
-    return out;
+    result.x = max_f(result.x, eps);
+    result.y = max_f(result.y, eps);
+    result.z = max_f(result.z, eps);
+
+    return result;
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
@@ -99,22 +107,25 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
 
     if (params.logc == LOGC3) {
         rgb = logC3_lin(rgb, params.ei);
-    } else {
+    }
+    else {
         rgb = logC4_lin(rgb);
     }
 
     if (params.mapprinterlights) {
-        rgb = printerpoints(rgb, params);
+        rgb = printerpoints_apply(rgb, params);
     }
 
     if (params.maptrims) {
-        rgb = rgbtrims(rgb, params);
+        rgb = printerpoints_trims(rgb, params);
     }
 
     if (params.logc == LOGC3) {
         rgb = lin_logC3(rgb, params.ei);
-    } else {
+    }
+    else {
         rgb = lin_logC4(rgb);
     }
+
     return rgb;
 }

@@ -1,11 +1,11 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
-// Luma-axis saturation test with selectable color space coefficients.
+//
+// Luma-axis saturation in linear light.
 
 // clang-format off
-DEFINE_UI_PARAMS(saturation, Saturation, DCTLUI_SLIDER_FLOAT, 50, 0, 100, 1)
+DEFINE_UI_PARAMS(saturation, Saturation, DCTLUI_SLIDER_FLOAT, 50.0f, 0.0f, 100.0f, 1.0f)
 DEFINE_UI_PARAMS(lumaaxis, Luma axis, DCTLUI_COMBO_BOX, 6, {XYZ, ACESAP0, ACESAP1, AWGC3, AWGC4, DWG, REC709, REC2020, SRGB, DCIP3D60, DCIP3, DCIP3D65, GEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, Rec2020 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
 DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_COMBO_BOX, 0, {LIN, ACESCC, ACESCCT, LOGC3, LOGC4, CINEON, DWGINTERMEDIATE, APPLELOG, GAMMA22, GAMMA24, GAMMA26, REC709GAMMA, SRGBGAMMA, FILM5}, {Linear, AcesCC, AcesCCT, ARRI LogC3, ARRI LogC4, Cineon, DaVinci Intermediate, Apple Log, Gamma2.2, Gamma2.4, Gamma2.6, Rec709, sRGB, Blackmagic Film})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
@@ -31,7 +31,8 @@ struct SaturationYParams
     int ei;
 };
 
-__DEVICE__ float saturation_factor(float value)
+__DEVICE__ float
+saturation_y_factor(float value)
 {
     if (value <= 50.0f) {
         return value / 50.0f;
@@ -40,7 +41,8 @@ __DEVICE__ float saturation_factor(float value)
     return 1.0f + (value - 50.0f) / 50.0f;
 }
 
-__DEVICE__ float3 gamma_to_lin(float3 rgb, struct SaturationYParams params)
+__DEVICE__ float3
+saturation_y_gamma_to_lin(float3 rgb, struct SaturationYParams params)
 {
     switch (params.gamma) {
     case LIN:
@@ -89,7 +91,8 @@ __DEVICE__ float3 gamma_to_lin(float3 rgb, struct SaturationYParams params)
     return rgb;
 }
 
-__DEVICE__ float3 lin_to_gamma(float3 rgb, struct SaturationYParams params)
+__DEVICE__ float3
+saturation_y_lin_to_gamma(float3 rgb, struct SaturationYParams params)
 {
     switch (params.gamma) {
     case LIN:
@@ -138,7 +141,8 @@ __DEVICE__ float3 lin_to_gamma(float3 rgb, struct SaturationYParams params)
     return rgb;
 }
 
-__DEVICE__ float3 luma_coefficients(struct SaturationYParams params)
+__DEVICE__ float3
+saturation_y_luma_coefficients(struct SaturationYParams params)
 {
     switch (params.lumaaxis) {
     case XYZ:
@@ -172,11 +176,11 @@ __DEVICE__ float3 luma_coefficients(struct SaturationYParams params)
     return rec709_y_lum_coeff();
 }
 
-__DEVICE__ float3 saturation_y(float3 rgb, float saturationValue, struct SaturationYParams params)
+__DEVICE__ float3
+saturation_y_apply(float3 rgb, float value, struct SaturationYParams params)
 {
-    float sat = saturation_factor(saturationValue);
-    float3 coeff = luma_coefficients(params);
-
+    float sat = saturation_y_factor(value);
+    float3 coeff = saturation_y_luma_coefficients(params);
     float Y = rgb.x * coeff.x + rgb.y * coeff.y + rgb.z * coeff.z;
 
     return make_float3(Y + (rgb.x - Y) * sat, Y + (rgb.y - Y) * sat, Y + (rgb.z - Y) * sat);
@@ -191,9 +195,10 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.gamma = gamma;
     params.ei = ei;
 
-    rgb = gamma_to_lin(rgb, params);
-    rgb = saturation_y(rgb, saturation, params);
-    rgb = lin_to_gamma(rgb, params);
+    // Saturation operates around the linear-light luma axis.
+    rgb = saturation_y_gamma_to_lin(rgb, params);
+    rgb = saturation_y_apply(rgb, saturation, params);
+    rgb = saturation_y_lin_to_gamma(rgb, params);
 
     if (adjustdisplay) {
         rgb = adjust_display(rgb);

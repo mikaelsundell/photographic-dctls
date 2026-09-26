@@ -1,11 +1,13 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
+//
+// LogC exposure adjustment with false-color exposure zones.
 
 // clang-format off
 DEFINE_UI_PARAMS(logc, LogC, DCTLUI_COMBO_BOX, 0, {LOGC3, LOGC4}, {LogC3, LogC4})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
-DEFINE_UI_PARAMS(exposure, Exposure, DCTLUI_SLIDER_FLOAT, 0.0, -8.0, 8.0, 0.1)
+DEFINE_UI_PARAMS(exposure, Exposure, DCTLUI_SLIDER_FLOAT, 0.0f, -8.0f, 8.0f, 0.1f)
 DEFINE_UI_PARAMS(ev, Exposure EV, DCTLUI_COMBO_BOX, 3, {EV_3, EV_2, EV_1, EV0, EV1, EV2, EV3}, {EV -3, EV -2, EV -1, EV 0, EV 1, EV 2, EV 3})
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 DEFINE_UI_PARAMS(showcolors, Show colors, DCTLUI_CHECK_BOX, 0)
@@ -23,56 +25,69 @@ struct LogCExposureParams
     int ev;
 };
 
-__DEVICE__ float evstops(int ev) {
+__DEVICE__ float
+logcexposure_ev_stops(int ev)
+{
     if (ev == EV_3) {
         return -3.0f;
-    } else if (ev == EV_2) {
+    }
+    else if (ev == EV_2) {
         return -2.0f;
-    } else if (ev == EV_1) {
+    }
+    else if (ev == EV_1) {
         return -1.0f;
-    } else if (ev == EV0) {
+    }
+    else if (ev == EV0) {
         return 0.0f;
-    } else if (ev == EV1) {
+    }
+    else if (ev == EV1) {
         return 1.0f;
-    } else if (ev == EV2) {
+    }
+    else if (ev == EV2) {
         return 2.0f;
-    } else if (ev == EV3) {
+    }
+    else if (ev == EV3) {
         return 3.0f;
     }
-    return 0.0;
+
+    return 0.0f;
 }
 
-__DEVICE__ float3 logC_ev_color(float3 input_rgb, struct LogCExposureParams params) {
+__DEVICE__ float3
+logcexposure_ev_color(float3 rgb, struct LogCExposureParams params)
+{
     struct LogCColor colors[logC_stops];
+    float evs = logcexposure_ev_stops(params.ev);
+
+    // Build LogC thresholds around 18% gray.
     if (params.logc == LOGC3) {
         struct LogC3Curve cv = logC3_curve(params.ei);
-        float evs = evstops(params.ev);
-        for (unsigned long i = 0; i < logC_stops; i++) {
+
+        for (int i = 0; i < logC_stops; i++) {
             colors[i] = logC_colors[i];
             float lin = pow_f(2.0f, colors[i].stop + evs + 0.5f) * 0.18f;
-            float log = min_f(LogC3Curve_lin_logC3(cv, lin), 1.0f);
-            colors[i].stop = log;
+            colors[i].stop = min_f(LogC3Curve_lin_logC3(cv, lin), 1.0f);
         }
     }
     else {
         struct LogC4Curve cv = logC4_curve();
-        float evs = evstops(params.ev);
-        for (unsigned long i = 0; i < logC_stops; i++) {
+
+        for (int i = 0; i < logC_stops; i++) {
             colors[i] = logC_colors[i];
             float lin = pow_f(2.0f, colors[i].stop + evs + 0.5f) * 0.18f;
-            float log = min_f(LogC4Curve_lin_logC4(cv, lin), 1.0f);
-            colors[i].stop = log;
+            colors[i].stop = min_f(LogC4Curve_lin_logC4(cv, lin), 1.0f);
         }
     }
-    float3 result = make_float3(0.0f, 0.0f, 0.0f);
-    float lum = luma_rec709(input_rgb);
-    for (unsigned long i = 0; i < logC_stops; i++) {
-        if (lum <= colors[i].stop || i == (sizeof(logC_colors) / sizeof(struct LogCColor)) - 1) {
-            result = make_float3(colors[i].r, colors[i].g, colors[i].b);
-            break;
+
+    float lum = luma_rec709(rgb);
+
+    for (int i = 0; i < logC_stops; i++) {
+        if (lum <= colors[i].stop || i == logC_stops - 1) {
+            return make_float3(colors[i].r, colors[i].g, colors[i].b);
         }
     }
-    return result; 
+
+    return make_float3(0.0f, 0.0f, 0.0f);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
@@ -85,32 +100,42 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.exposure = exposure;
     params.ev = ev;
 
+    // Exposure in linear light.
     if (params.logc == LOGC3) {
-        rgb = lin_logC3(logC3_lin(rgb, params.ei) * pow_f(2.0, params.exposure), params.ei);
+        rgb = lin_logC3(logC3_lin(rgb, params.ei) * pow_f(2.0f, params.exposure), params.ei);
     }
     else {
-        rgb = lin_logC4(logC4_lin(rgb) * pow_f(2.0, params.exposure));
+        rgb = lin_logC4(logC4_lin(rgb) * pow_f(2.0f, params.exposure));
     }
+
     if (showcolors > 0) {
-        rgb = logC_ev_color(rgb, params);
+        rgb = logcexposure_ev_color(rgb, params);
     }
+
     if (showlegend > 0) {
-        int legendwidth = p_Width * 0.8;
-        int offset = p_Height * 0.02;
-        int barheight = p_Height * 0.05;
+        int legendwidth = (int)((float)p_Width * 0.8f);
+        int offset = (int)((float)p_Height * 0.02f);
+        int barheight = (int)((float)p_Height * 0.05f);
         int startY = p_Height - barheight - offset;
-        int startX = p_Width * 0.1;
+        int startX = (int)((float)p_Width * 0.1f);
         int endX = startX + legendwidth;
+
         if (p_Y >= startY && p_Y < startY + barheight && p_X >= startX && p_X < endX) {
             int width = legendwidth / logC_stops;
-            int index = (p_X - startX) / width;
-            if (index >= 0 && index < logC_stops) {
-                return make_float3(logC_colors[index].r, logC_colors[index].g, logC_colors[index].b);
+
+            if (width > 0) {
+                int index = (p_X - startX) / width;
+
+                if (index >= 0 && index < logC_stops) {
+                    return make_float3(logC_colors[index].r, logC_colors[index].g, logC_colors[index].b);
+                }
             }
         }
     }
+
     if (adjustdisplay) {
         rgb = adjust_display(rgb);
     }
+
     return rgb;
 }

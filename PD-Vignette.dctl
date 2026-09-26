@@ -1,26 +1,25 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
-// Lens-inspired vignette applied as a multiplicative attenuation in linear light.
-// Positive Amount values darken the image toward the lens edge in stops.
+//
+// Lens-inspired vignette in linear light.
 
 // clang-format off
 DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_COMBO_BOX, 4, {LIN, ACESCC, ACESCCT, APPLELOG, LOGC3, LOGC4, FILM5, CINEON, DWGINTERMEDIATE, GAMMA22, GAMMA24, GAMMA26, REC709GAMMA, SRGBGAMMA}, {Linear, AcesCC, AcesCCT, Apple Log, ARRI LogC3, ARRI LogC4, Blackmagic Film, Cineon, DaVinci Intermediate, Gamma2.2, Gamma2.4, Gamma2.6, Rec709, sRGB})
 DEFINE_UI_PARAMS(ei, LogC3 EI, DCTLUI_COMBO_BOX, 7, {EI160, EI200, EI250, EI320, EI400, EI500, EI640, EI800, EI1000, EI1280, EI1600}, {EI 160, EI 200, EI 250, EI 320, EI 400, EI 500, EI 640, EI 800, EI 1000, EI 1280, EI 1600})
 DEFINE_UI_PARAMS(vignette, Vignette, DCTLUI_COMBO_BOX, 0, {VIGNETTE_NATURAL, VIGNETTE_CLASSIC, VIGNETTE_ANAMORPHIC, VIGNETTE_MECHANICAL}, {Natural, Classic Lens, Anamorphic, Mechanical})
-DEFINE_UI_PARAMS(amount, Amount, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 4.0, 0.01)
-DEFINE_UI_PARAMS(radius, Radius, DCTLUI_SLIDER_FLOAT, 1.0, 0.10, 2.50, 0.01)
-DEFINE_UI_PARAMS(softness, Softness, DCTLUI_SLIDER_FLOAT, 0.60, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(aspect, Aspect, DCTLUI_SLIDER_FLOAT, 1.0, 0.25, 4.0, 0.01)
-DEFINE_UI_PARAMS(rotation, Rotation, DCTLUI_SLIDER_FLOAT, 0.0, -90.0, 90.0, 0.1)
-DEFINE_UI_PARAMS(center_x, Center X, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(center_y, Center Y, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(color_r, Edge R, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(color_g, Edge G, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(color_b, Edge B, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-// clang-format on
+DEFINE_UI_PARAMS(amount, Amount, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 4.0f, 0.01f)
+DEFINE_UI_PARAMS(radius, Radius, DCTLUI_SLIDER_FLOAT, 1.0f, 0.10f, 2.50f, 0.01f)
+DEFINE_UI_PARAMS(softness, Softness, DCTLUI_SLIDER_FLOAT, 0.60f, 0.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(aspect, Aspect, DCTLUI_SLIDER_FLOAT, 1.0f, 0.25f, 4.0f, 0.01f)
+DEFINE_UI_PARAMS(rotation, Rotation, DCTLUI_SLIDER_FLOAT, 0.0f, -90.0f, 90.0f, 0.1f)
+DEFINE_UI_PARAMS(center_x, Center X, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(center_y, Center Y, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(color_r, Edge R, DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(color_g, Edge G, DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(color_b, Edge B, DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
 
+// clang-format on
 #include "PD-Common.h"
 #include "PD-Aces.h"
 #include "PD-Apple.h"
@@ -173,26 +172,23 @@ vignette_distance(int p_Width, int p_Height, int p_X, int p_Y, struct VignettePa
     float height = max_f((float)p_Height, 1.0f);
     float image_aspect = width / height;
 
-    // Pixel centers, normalized around the optical axis. X is corrected for
-    // image aspect so a circular lens remains circular on a rectangular frame.
+    // Normalize around the optical axis.
     float x = ((((float)p_X + 0.5f) / width) - 0.5f) * 2.0f * image_aspect;
     float y = ((((float)p_Y + 0.5f) / height) - 0.5f) * 2.0f;
 
-    // Center controls are expressed in half-frame-height units.
     x -= params.center_x;
     y -= params.center_y;
 
     float radians = params.rotation * (pi / 180.0f);
-    float c = _cosf(radians);
-    float s = _sinf(radians);
+    float c = cos_f(radians);
+    float s = sin_f(radians);
 
     float rx = c * x + s * y;
     float ry = -s * x + c * y;
 
     float lens_aspect = max_f(params.aspect, eps);
 
-    // Aspect > 1 stretches the lens field horizontally, useful for anamorphic
-    // and oval image-circle character. Aspect < 1 compresses it horizontally.
+    // Aspect > 1 stretches the lens field horizontally.
     rx /= lens_aspect;
 
     return hypot_f(rx, ry);
@@ -203,9 +199,7 @@ vignette_natural(float r, struct VignetteParams params)
 {
     const float eps = 1e-6f;
 
-    // A cos^4-inspired illumination model. The exact lens angle is not known,
-    // so Radius controls the scale and Softness controls how gradually the
-    // optical falloff builds from the center toward the image circle.
+    // Cos^4-inspired radial falloff.
     float rr = r / max_f(params.radius, eps);
     float k = mix_f(0.35f, 1.75f, params.softness);
     float q = k * rr * rr;
@@ -232,7 +226,7 @@ vignette_anamorphic(float r, struct VignetteParams params)
     float q = k * rr * rr;
     float transmission = 1.0f / ((1.0f + q) * (1.0f + q));
     float falloff = 1.0f - transmission;
-    falloff = falloff * (0.85f + 0.15f * clamp_f(rr, 0.0f, 1.0f));
+    falloff *= 0.85f + 0.15f * clamp_f(rr, 0.0f, 1.0f);
     return clamp_f(falloff, 0.0f, 1.0f);
 }
 
@@ -264,17 +258,12 @@ vignette_apply(float3 rgb, float falloff, struct VignetteParams params)
 {
     falloff = clamp_f(falloff, 0.0f, 1.0f);
 
-    // Vignetting is an exposure loss in linear light. Edge R/G/B are small
-    // relative stop offsets, allowing subtle wavelength-dependent lens shading.
+    // Exposure loss in linear light.
     float amount_r = max_f(params.amount + params.color_r, 0.0f);
     float amount_g = max_f(params.amount + params.color_g, 0.0f);
     float amount_b = max_f(params.amount + params.color_b, 0.0f);
 
-    float3 gain = make_float3(
-        exp2_f(-amount_r * falloff),
-        exp2_f(-amount_g * falloff),
-        exp2_f(-amount_b * falloff));
-
+    float3 gain = make_float3(exp2_f(-amount_r * falloff), exp2_f(-amount_g * falloff), exp2_f(-amount_b * falloff));
     return make_float3(rgb.x * gain.x, rgb.y * gain.y, rgb.z * gain.z);
 }
 

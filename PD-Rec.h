@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
-// rec709 curve
+// Rec709 transfer curve
 struct Rec709Curve {
     float threshold;
     float slope;
@@ -28,17 +26,17 @@ rec709_curve()
 __DEVICE__ float
 Rec709Curve_lin_rec709(struct Rec709Curve cv, float lin)
 {
-    return (lin < cv.threshold) ? (lin * cv.slope) : (cv.scale * pow_f(lin, cv.exp) - cv.offset);
+    return lin < cv.threshold ? lin * cv.slope : cv.scale * pow_f(lin, cv.exp) - cv.offset;
 }
 
 __DEVICE__ float
 Rec709Curve_rec709_lin(struct Rec709Curve cv, float val)
 {
-    return (val < Rec709Curve_lin_rec709(cv, cv.threshold)) ? (val / cv.slope)
-                                                            : pow_f((val + cv.offset) / cv.scale, 1.0f / cv.exp);
+    return val < Rec709Curve_lin_rec709(cv, cv.threshold) ? val / cv.slope
+                                                          : pow_f((val + cv.offset) / cv.scale, 1.0f / cv.exp);
 }
 
-// rec709 colorspace
+// Rec709 colorspace
 struct Rec709Colorspace {
     struct Matrix rec709_matrix;
     struct Matrix xyz_matrix;
@@ -51,17 +49,17 @@ Rec709Colorspace_xyz_rec709(struct Rec709Colorspace cs, float3 xyz)
 }
 
 __DEVICE__ float3
-Rec709Colorspace_rec709_xyz(struct Rec709Colorspace cs, float3 rec709)
+Rec709Colorspace_rec709_xyz(struct Rec709Colorspace cs, float3 rgb)
 {
-    return mult_matrix(rec709, cs.xyz_matrix);
+    return mult_matrix(rgb, cs.xyz_matrix);
 }
 
 __DEVICE__ struct Rec709Colorspace
 rec709_colorspace()
 {
     struct Rec709Colorspace cs;
+
     // colortool --inputcolorspace Rec709 -v
-    // convert xyz to rec709 matrix
     cs.rec709_matrix.m00 = 3.240970f;
     cs.rec709_matrix.m01 = -1.537383f;
     cs.rec709_matrix.m02 = -0.498611f;
@@ -71,7 +69,7 @@ rec709_colorspace()
     cs.rec709_matrix.m06 = 0.055630f;
     cs.rec709_matrix.m07 = -0.203977f;
     cs.rec709_matrix.m08 = 1.056972f;
-    // convert rec709 to xyz matrix
+
     cs.xyz_matrix.m00 = 0.412391f;
     cs.xyz_matrix.m01 = 0.357584f;
     cs.xyz_matrix.m02 = 0.180481f;
@@ -81,6 +79,7 @@ rec709_colorspace()
     cs.xyz_matrix.m06 = 0.019331f;
     cs.xyz_matrix.m07 = 0.119195f;
     cs.xyz_matrix.m08 = 0.950532f;
+
     return cs;
 }
 
@@ -91,7 +90,7 @@ rec709_y_lum_coeff()
     return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
 }
 
-// rec2020 colorspace
+// Rec2020 colorspace
 struct Rec2020Colorspace {
     struct Matrix rec2020_matrix;
     struct Matrix xyz_matrix;
@@ -104,17 +103,17 @@ Rec2020Colorspace_xyz_rec2020(struct Rec2020Colorspace cs, float3 xyz)
 }
 
 __DEVICE__ float3
-Rec2020Colorspace_rec2020_xyz(struct Rec2020Colorspace cs, float3 rec2020)
+Rec2020Colorspace_rec2020_xyz(struct Rec2020Colorspace cs, float3 rgb)
 {
-    return mult_matrix(rec2020, cs.xyz_matrix);
+    return mult_matrix(rgb, cs.xyz_matrix);
 }
 
 __DEVICE__ struct Rec2020Colorspace
 rec2020_colorspace()
 {
     struct Rec2020Colorspace cs;
+
     // colortool --inputcolorspace Rec2020 -v
-    // convert xyz to rec2020 matrix
     cs.rec2020_matrix.m00 = 1.716651f;
     cs.rec2020_matrix.m01 = -0.355671f;
     cs.rec2020_matrix.m02 = -0.253366f;
@@ -124,7 +123,7 @@ rec2020_colorspace()
     cs.rec2020_matrix.m06 = 0.017640f;
     cs.rec2020_matrix.m07 = -0.042771f;
     cs.rec2020_matrix.m08 = 0.942103f;
-    // convert rec2020 to xyz matrix
+
     cs.xyz_matrix.m00 = 0.636958f;
     cs.xyz_matrix.m01 = 0.144617f;
     cs.xyz_matrix.m02 = 0.168881f;
@@ -134,6 +133,7 @@ rec2020_colorspace()
     cs.xyz_matrix.m06 = 0.000000f;
     cs.xyz_matrix.m07 = 0.028073f;
     cs.xyz_matrix.m08 = 1.060985f;
+
     return cs;
 }
 
@@ -144,7 +144,7 @@ rec2020_y_lum_coeff()
     return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
 }
 
-// convert linear to rec709
+// linear -> Rec709
 __DEVICE__ float3
 lin_rec709(float3 rgb)
 {
@@ -153,7 +153,7 @@ lin_rec709(float3 rgb)
                        Rec709Curve_lin_rec709(cv, rgb.z));
 }
 
-// convert rec709 to linear
+// Rec709 -> linear
 __DEVICE__ float3
 rec709_lin(float3 rgb)
 {
@@ -162,15 +162,15 @@ rec709_lin(float3 rgb)
                        Rec709Curve_rec709_lin(cv, rgb.z));
 }
 
-// convert xyz to rec709
+// XYZ -> Rec709
 __DEVICE__ float3
-xyz_rec709(float3 rgb)
+xyz_rec709(float3 xyz)
 {
     struct Rec709Colorspace cs = rec709_colorspace();
-    return Rec709Colorspace_xyz_rec709(cs, rgb);
+    return Rec709Colorspace_xyz_rec709(cs, xyz);
 }
 
-// convert rec709 to xyz
+// Rec709 -> XYZ
 __DEVICE__ float3
 rec709_xyz(float3 rgb)
 {
@@ -178,15 +178,15 @@ rec709_xyz(float3 rgb)
     return Rec709Colorspace_rec709_xyz(cs, rgb);
 }
 
-// convert xyz to rec2020
+// XYZ -> Rec2020
 __DEVICE__ float3
-xyz_rec2020(float3 rgb)
+xyz_rec2020(float3 xyz)
 {
     struct Rec2020Colorspace cs = rec2020_colorspace();
-    return Rec2020Colorspace_xyz_rec2020(cs, rgb);
+    return Rec2020Colorspace_xyz_rec2020(cs, xyz);
 }
 
-// convert rec2020 to xyz
+// Rec2020 -> XYZ
 __DEVICE__ float3
 rec2020_xyz(float3 rgb)
 {
@@ -194,7 +194,7 @@ rec2020_xyz(float3 rgb)
     return Rec2020Colorspace_rec2020_xyz(cs, rgb);
 }
 
-// convert ycbcr to rec709
+// YCbCr -> Rec709
 __DEVICE__ float3
 ycbcr_rgb709(float3 ycbcr)
 {
@@ -207,7 +207,7 @@ ycbcr_rgb709(float3 ycbcr)
     return make_float3(r, g, b);
 }
 
-// convert rec709 to ycbcr
+// Rec709 -> YCbCr
 __DEVICE__ float3
 rgb709_ycbcr(float3 rgb)
 {

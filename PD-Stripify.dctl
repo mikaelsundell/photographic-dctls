@@ -3,7 +3,7 @@
 // https://github.com/mikaelsundell/photographic-dctls
 
 // clang-format off
-DEFINE_UI_PARAMS(stripify, Stripify, DCTLUI_SLIDER_FLOAT, 0, 0, 100, 1);
+DEFINE_UI_PARAMS(stripify, Stripify, DCTLUI_SLIDER_FLOAT, 0.0f, 0.0f, 100.0f, 1.0f)
 
 // clang-format on
 #include "PD-Common.h"
@@ -11,7 +11,9 @@ DEFINE_UI_PARAMS(stripify, Stripify, DCTLUI_SLIDER_FLOAT, 0, 0, 100, 1);
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
-    struct Matrix strip = {1, 0, 0, 0, 1, 0, 0, 1, 0};
-    float3 result = mix_f3(rgb, mult_matrix(rgb, strip), stripify / 100);
+    struct Matrix strip = {1.0f, 0.0f, 0.0f,
+                           0.0f, 1.0f, 0.0f,
+                           0.0f, 1.0f, 0.0f};
+    float3 result = mix_f3(rgb, mult_matrix(rgb, strip), stripify / 100.0f);
     return result;
 }

@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
 __DEVICE__ struct Matrix
 whitepoint_d60_d65_adaptation()
 {
@@ -78,33 +76,33 @@ whitepoint_d65_d63_adaptation()
 
 // whitepoint adaptation
 __DEVICE__ float3
-d60_d65_adaptation(float3 rgb)
+d60_d65_adaptation(float3 xyz)
 {
     struct Matrix mt = whitepoint_d60_d65_adaptation();
-    float3 result = mult_matrix(rgb, mt);
+    float3 result = mult_matrix(xyz, mt);
     return result;
 }
 
 __DEVICE__ float3
-d63_d65_adaptation(float3 rgb)
+d63_d65_adaptation(float3 xyz)
 {
     struct Matrix mt = whitepoint_d63_d65_adaptation();
-    float3 result = mult_matrix(rgb, mt);
+    float3 result = mult_matrix(xyz, mt);
     return result;
 }
 
 __DEVICE__ float3
-d65_d60_adaptation(float3 rgb)
+d65_d60_adaptation(float3 xyz)
 {
     struct Matrix mt = whitepoint_d65_d60_adaptation();
-    float3 result = mult_matrix(rgb, mt);
+    float3 result = mult_matrix(xyz, mt);
     return result;
 }
 
 __DEVICE__ float3
-d65_d63_adaptation(float3 rgb)
+d65_d63_adaptation(float3 xyz)
 {
     struct Matrix mt = whitepoint_d65_d63_adaptation();
-    float3 result = mult_matrix(rgb, mt);
+    float3 result = mult_matrix(xyz, mt);
     return result;
 }

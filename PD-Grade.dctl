@@ -1,29 +1,31 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
+//
+// Per-channel black/white point, lift, gain, multiply, offset and gamma grading.
 
 // clang-format off
-DEFINE_UI_PARAMS(blackpoint_r, Black Point R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(blackpoint_g, Black Point G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(blackpoint_b, Black Point B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(whitepoint_r, White Point R, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(whitepoint_g, White Point G, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(whitepoint_b, White Point B, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(lift_r, Lift R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(lift_g, Lift G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(lift_b, Lift B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(gain_r, Gain R, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(gain_g, Gain G, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(gain_b, Gain B, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(multiply_r, Multiply R, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(multiply_g, Multiply G, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(multiply_b, Multiply B, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01);
-DEFINE_UI_PARAMS(offset_r, Offset R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(offset_g, Offset G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(offset_b, Offset B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(gamma_r, Gamma R, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(gamma_g, Gamma G, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
-DEFINE_UI_PARAMS(gamma_b, Gamma B, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01);
+DEFINE_UI_PARAMS(blackpoint_r, Black Point R, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(blackpoint_g, Black Point G, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(blackpoint_b, Black Point B, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(whitepoint_r, White Point R, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(whitepoint_g, White Point G, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(whitepoint_b, White Point B, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(lift_r, Lift R, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(lift_g, Lift G, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(lift_b, Lift B, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(gain_r, Gain R, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(gain_g, Gain G, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(gain_b, Gain B, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(multiply_r, Multiply R, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(multiply_g, Multiply G, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(multiply_b, Multiply B, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 2.0f, 0.01f)
+DEFINE_UI_PARAMS(offset_r, Offset R, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(offset_g, Offset G, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(offset_b, Offset B, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(gamma_r, Gamma R, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(gamma_g, Gamma G, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(gamma_b, Gamma B, DCTLUI_SLIDER_FLOAT, 0.0f, -1.0f, 1.0f, 0.01f)
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 1)
 
 // clang-format on
@@ -41,30 +43,44 @@ struct Grade
     float2 gamma_scale;
 };
 
-__DEVICE__ float3 apply_scale(float3 rgb, float2 scale) {
+__DEVICE__ float3
+grade_apply_scale(float3 rgb, float2 scale)
+{
     float3 result;
-    result.r = (rgb.r < 0.0) ? rgb.r * scale.x : rgb.r * scale.y;
-    result.g = (rgb.g < 0.0) ? rgb.g * scale.x : rgb.g * scale.y;
-    result.b = (rgb.b < 0.0) ? rgb.b * scale.x : rgb.b * scale.y;
+    result.x = rgb.x < 0.0f ? rgb.x * scale.x : rgb.x * scale.y;
+    result.y = rgb.y < 0.0f ? rgb.y * scale.x : rgb.y * scale.y;
+    result.z = rgb.z < 0.0f ? rgb.z * scale.x : rgb.z * scale.y;
     return result;
 }
 
-__DEVICE__ float apply_grading(float rgb, float blackpoint, float whitepoint, float lift, float gain, float multiply, float offset, float gamma) {
-    float scaled = (rgb - blackpoint) / (whitepoint - blackpoint);
+__DEVICE__ float
+grade_apply_channel(float value, float blackpoint, float whitepoint, float lift, float gain, float multiply, float offset, float gamma)
+{
+    const float eps = 1e-6f;
+
+    // Preserve range direction while avoiding divide-by-zero.
+    float range = whitepoint - blackpoint;
+    if (abs_f(range) < eps) {
+        range = range < 0.0f ? -eps : eps;
+    }
+
+    float scaled = (value - blackpoint) / range;
     float lifted = scaled * multiply * (gain - lift) + lift;
     float final_offset = lifted + offset;
-    return pow_f(final_offset, 1.0 + (gamma));
+    return pow_f(final_offset, 1.0f + gamma);
 }
 
-__DEVICE__ float3 grade(float3 rgb, struct Grade gr) {
-    rgb.x = apply_grading(rgb.x, gr.blackpoint.x, gr.whitepoint.x, gr.lift.x, gr.gain.x, gr.multiply.x, gr.offset.x, gr.gamma.x);
-    rgb.y = apply_grading(rgb.y, gr.blackpoint.y, gr.whitepoint.y, gr.lift.y, gr.gain.y, gr.multiply.y, gr.offset.y, gr.gamma.y);
-    rgb.z = apply_grading(rgb.z, gr.blackpoint.z, gr.whitepoint.z, gr.lift.z, gr.gain.z, gr.multiply.z, gr.offset.z, gr.gamma.z);
+__DEVICE__ float3
+grade_apply(float3 rgb, struct Grade params)
+{
+    rgb.x = grade_apply_channel(rgb.x, params.blackpoint.x, params.whitepoint.x, params.lift.x, params.gain.x, params.multiply.x, params.offset.x, params.gamma.x);
+    rgb.y = grade_apply_channel(rgb.y, params.blackpoint.y, params.whitepoint.y, params.lift.y, params.gain.y, params.multiply.y, params.offset.y, params.gamma.y);
+    rgb.z = grade_apply_channel(rgb.z, params.blackpoint.z, params.whitepoint.z, params.lift.z, params.gain.z, params.multiply.z, params.offset.z, params.gamma.z);
     return rgb;
 }
 
-// transform
-__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
     struct Grade params;
     params.whitepoint = make_float3(whitepoint_r, whitepoint_g, whitepoint_b);
     params.blackpoint = make_float3(blackpoint_r, blackpoint_g, blackpoint_b);
@@ -72,11 +88,14 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.gain = make_float3(gain_r, gain_g, gain_b);
     params.multiply = make_float3(multiply_r, multiply_g, multiply_b);
     params.offset = make_float3(offset_r, offset_g, offset_b);
-    params.gamma_scale = make_float2(-5.0, -0.8);
-    params.gamma = apply_scale(make_float3(gamma_r, gamma_g, gamma_b), params.gamma_scale);
-    float3 rgb = grade(make_float3(p_R, p_G, p_B), params);
+    params.gamma_scale = make_float2(-5.0f, -0.8f);
+    params.gamma = grade_apply_scale(make_float3(gamma_r, gamma_g, gamma_b), params.gamma_scale);
+
+    float3 rgb = grade_apply(make_float3(p_R, p_G, p_B), params);
+
     if (adjustdisplay) {
         rgb = adjust_display(rgb);
     }
+
     return rgb;
 }

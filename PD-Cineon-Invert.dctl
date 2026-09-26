@@ -1,26 +1,23 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
-// Cineon negative inversion with precise control over the dmin ratio based inversion process using adjustable 
-// parameters such as density, bit depth, offset, and density scale. You can specify dmin base values manually
-// as floating-point numbers (obtained from tools like Pixel Analyzer in Nuke or similar software) or sample
-// them using a rectangular sampler from the border or other dmin base areas.
+//
+// Cineon negative inversion with manual or sampled Dmin.
 
 // clang-format off
-DEFINE_UI_PARAMS(density, Density, DCTLUI_SLIDER_FLOAT, 2.046, 0, 4.092, 1);
-DEFINE_UI_PARAMS(bitdepth, Bitdepth, DCTLUI_SLIDER_FLOAT, 1023, 0, 2048, 1);
-DEFINE_UI_PARAMS(offset, Offset, DCTLUI_SLIDER_FLOAT, 95, 0, 190, 1);
-DEFINE_UI_PARAMS(dminx, Density dmin R, DCTLUI_SLIDER_FLOAT, 0.5, 0, 10, 0.01);
-DEFINE_UI_PARAMS(dminy, Density dmin G, DCTLUI_SLIDER_FLOAT, 0.5, 0, 10, 0.01);
-DEFINE_UI_PARAMS(dminz, Density dmin B, DCTLUI_SLIDER_FLOAT, 0.5, 0, 10, 0.01);
-DEFINE_UI_PARAMS(scalex, Density scale R, DCTLUI_SLIDER_FLOAT, 1, 0, 10, 0.01);
-DEFINE_UI_PARAMS(scaley, Density scale G, DCTLUI_SLIDER_FLOAT, 1, 0, 10, 0.01);
-DEFINE_UI_PARAMS(scalez, Density scale B, DCTLUI_SLIDER_FLOAT, 1, 0, 10, 0.01);
-DEFINE_UI_PARAMS(samplerx, Sampler x, DCTLUI_SLIDER_FLOAT, 0, 0, 4096, 1);
-DEFINE_UI_PARAMS(samplery, Sampler y, DCTLUI_SLIDER_FLOAT, 0, 0, 2048, 1);
-DEFINE_UI_PARAMS(samplerw, Sampler width, DCTLUI_SLIDER_FLOAT, 20, 1, 100, 1);
-DEFINE_UI_PARAMS(samplerh, Sampler height, DCTLUI_SLIDER_FLOAT, 20, 1, 100, 1);
+DEFINE_UI_PARAMS(density, Density, DCTLUI_SLIDER_FLOAT, 2.046f, 0.0f, 4.092f, 1.0f)
+DEFINE_UI_PARAMS(bitdepth, Bitdepth, DCTLUI_SLIDER_FLOAT, 1023.0f, 0.0f, 2048.0f, 1.0f)
+DEFINE_UI_PARAMS(offset, Offset, DCTLUI_SLIDER_FLOAT, 95.0f, 0.0f, 190.0f, 1.0f)
+DEFINE_UI_PARAMS(dminx, Density dmin R, DCTLUI_SLIDER_FLOAT, 0.5f, 0.0f, 10.0f, 0.01f)
+DEFINE_UI_PARAMS(dminy, Density dmin G, DCTLUI_SLIDER_FLOAT, 0.5f, 0.0f, 10.0f, 0.01f)
+DEFINE_UI_PARAMS(dminz, Density dmin B, DCTLUI_SLIDER_FLOAT, 0.5f, 0.0f, 10.0f, 0.01f)
+DEFINE_UI_PARAMS(scalex, Density scale R, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 10.0f, 0.01f)
+DEFINE_UI_PARAMS(scaley, Density scale G, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 10.0f, 0.01f)
+DEFINE_UI_PARAMS(scalez, Density scale B, DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 10.0f, 0.01f)
+DEFINE_UI_PARAMS(samplerx, Sampler x, DCTLUI_SLIDER_FLOAT, 0.0f, 0.0f, 4096.0f, 1.0f)
+DEFINE_UI_PARAMS(samplery, Sampler y, DCTLUI_SLIDER_FLOAT, 0.0f, 0.0f, 2048.0f, 1.0f)
+DEFINE_UI_PARAMS(samplerw, Sampler width, DCTLUI_SLIDER_FLOAT, 20.0f, 1.0f, 100.0f, 1.0f)
+DEFINE_UI_PARAMS(samplerh, Sampler height, DCTLUI_SLIDER_FLOAT, 20.0f, 1.0f, 100.0f, 1.0f)
 DEFINE_UI_PARAMS(showsampler, Show sampler, DCTLUI_CHECK_BOX, 0)
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 DEFINE_UI_PARAMS(cineonmethod, Cineon method, DCTLUI_COMBO_BOX, 0, {INVERSE, REVERSE}, {Inverse, Reverse})
@@ -43,74 +40,89 @@ struct CineonInvertParams
     int samplercolor;
 };
 
-__DEVICE__ inline float3 pixel(__TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB, int p_X, int p_Y)
+__DEVICE__ inline float3
+cineoninvert_pixel(__TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB, int p_X, int p_Y)
 {
     return make_float3(
         _tex2D(p_TexR, p_X, p_Y),
         _tex2D(p_TexG, p_X, p_Y),
-        _tex2D(p_TexB, p_X, p_Y)
-    );
+        _tex2D(p_TexB, p_X, p_Y));
 }
 
-__DEVICE__ float3 sample(__TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB, struct ROI roi)
+__DEVICE__ float3
+cineoninvert_sample(__TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB, struct ROI roi)
 {
     float3 sum = make_float3(0.0f, 0.0f, 0.0f);
     int count = 0;
+
     for (int i = roi.x1; i < roi.x2; i++) {
         for (int j = roi.y1; j < roi.y2; j++) {
-            sum += pixel(p_TexR, p_TexG, p_TexB, i, j);
+            sum += cineoninvert_pixel(p_TexR, p_TexG, p_TexB, i, j);
             count++;
         }
     }
+
     if (count > 0) {
-        return sum / make_float3(count, count, count);
-    } else {
-        return make_float3(0.0f, 0.0f, 0.0f);
+        float fcount = (float)count;
+        return sum / make_float3(fcount, fcount, fcount);
     }
+
+    return make_float3(0.0f, 0.0f, 0.0f);
 }
 
-__DEVICE__ float3 cineon_invert(float3 rgb, struct CineonInvertParams params)
+__DEVICE__ float3
+cineoninvert_apply(float3 rgb, struct CineonInvertParams params)
 {
     struct CineonCurve cv = cineon_curve();
     cv.density = params.density;
     cv.bitdepth = params.bitdepth;
-    cv.offset = params.offset;
+    cv.offset = (int)params.offset;
+
     if (params.cineonmethod == INVERSE) {
-        rgb = CineonCurve_invert_cineon(cv, rgb, params.scale, params.dmin);
-    } else {
-        rgb = CineonCurve_reverse_cineon(cv, rgb, params.scale, params.dmin);
+        return CineonCurve_invert_cineon(cv, rgb, params.scale, params.dmin);
     }
-    return rgb;
+
+    return CineonCurve_reverse_cineon(cv, rgb, params.scale, params.dmin);
 }
 
-__DEVICE__ float3 sampler_color(struct CineonInvertParams params)
+__DEVICE__ float3
+cineoninvert_sampler_color(struct CineonInvertParams params)
 {
-    float3 color;
     if (params.samplercolor == WHITE) {
-        color = make_float3(1.0f, 1.0f, 1.0f);
-    } else if (params.samplercolor == BLACK) {
-        color = make_float3(0.0f, 0.0f, 0.0f);
-    } else if (params.samplercolor == RED) {
-        color = make_float3(1.0f, 0.0f, 0.0f);
-    } else if (params.samplercolor == GREEN) {
-        color = make_float3(0.0f, 1.0f, 0.0f);
-    } else if (params.samplercolor == BLUE) {
-        color = make_float3(0.0f, 0.0f, 1.0f);
+        return make_float3(1.0f, 1.0f, 1.0f);
     }
-    return color;
+    else if (params.samplercolor == BLACK) {
+        return make_float3(0.0f, 0.0f, 0.0f);
+    }
+    else if (params.samplercolor == RED) {
+        return make_float3(1.0f, 0.0f, 0.0f);
+    }
+    else if (params.samplercolor == GREEN) {
+        return make_float3(0.0f, 1.0f, 0.0f);
+    }
+    else if (params.samplercolor == BLUE) {
+        return make_float3(0.0f, 0.0f, 1.0f);
+    }
+
+    return make_float3(1.0f, 1.0f, 1.0f);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB)
 {
-    float3 rgb = pixel(p_TexR, p_TexG, p_TexB, p_X, p_Y);
+    float3 rgb = cineoninvert_pixel(p_TexR, p_TexG, p_TexB, p_X, p_Y);
+
+    int sampler_x = (int)samplerx;
+    int sampler_y = (int)samplery;
+    int sampler_w = (int)samplerw;
+    int sampler_h = (int)samplerh;
+
     struct ROI sampler;
 
-    // sample
     if (dminmethod == SAMPLER) {
-        sampler.x1 = samplerx - samplerw / 2;
-        sampler.x2 = samplerx + samplerw / 2;
-        sampler.y1 = samplery - samplerh / 2;
-        sampler.y2 = samplery + samplerh / 2;
+        sampler.x1 = sampler_x - sampler_w / 2;
+        sampler.x2 = sampler_x + sampler_w / 2;
+        sampler.y1 = sampler_y - sampler_h / 2;
+        sampler.y2 = sampler_y + sampler_h / 2;
     }
 
     struct CineonInvertParams params;
@@ -123,34 +135,35 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTU
     params.samplercolor = samplercolor;
 
     if (params.dminmethod == SAMPLER) {
-        params.dmin = sample(p_TexR, p_TexG, p_TexB, sampler);
-    } else {
+        params.dmin = cineoninvert_sample(p_TexR, p_TexG, p_TexB, sampler);
+    }
+    else {
         params.dmin = make_float3(dminx, dminy, dminz);
-
     }
 
-    rgb = cineon_invert(rgb, params);
+    rgb = cineoninvert_apply(rgb, params);
+
     if (adjustdisplay) {
         rgb = adjust_display(rgb);
     }
+
     if (showsampler && params.dminmethod == SAMPLER) {
-        float3 color = sampler_color(params);
-        int crossw = (samplerw / 2) * 3 / 2;
-        int crossh = (samplerh / 2) * 3 / 2;
-        if ((p_X == sampler.x1 || p_X == sampler.x2 - 1) && (p_Y >= sampler.y1 && p_Y < sampler.y2) ||
-            (p_Y == sampler.y1 || p_Y == sampler.y2 - 1) && (p_X >= sampler.x1 && p_X < sampler.x2)) {
+        float3 color = cineoninvert_sampler_color(params);
+        int crossw = (sampler_w / 2) * 3 / 2;
+        int crossh = (sampler_h / 2) * 3 / 2;
+
+        if (((p_X == sampler.x1 || p_X == sampler.x2 - 1) && (p_Y >= sampler.y1 && p_Y < sampler.y2)) ||
+            ((p_Y == sampler.y1 || p_Y == sampler.y2 - 1) && (p_X >= sampler.x1 && p_X < sampler.x2))) {
             rgb = color;
-        } else {
-            if ((p_X >= sampler.x1 && p_X < sampler.x2) && (p_Y >= sampler.y1 && p_Y < sampler.y2)) {
-                rgb = params.dmin;
-            } else {
-               if ((p_X == samplerx && (p_Y >= samplery - crossh && p_Y < samplery + crossh)) ||
-                    (p_Y == samplery && (p_X >= samplerx - crossw && p_X < samplerx + crossw)))
-                {
-                    rgb = color;
-                }
-            }
+        }
+        else if (p_X >= sampler.x1 && p_X < sampler.x2 && p_Y >= sampler.y1 && p_Y < sampler.y2) {
+            rgb = params.dmin;
+        }
+        else if ((p_X == sampler_x && p_Y >= sampler_y - crossh && p_Y < sampler_y + crossh) ||
+                 (p_Y == sampler_y && p_X >= sampler_x - crossw && p_X < sampler_x + crossw)) {
+            rgb = color;
         }
     }
+
     return rgb;
 }

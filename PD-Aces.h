@@ -2,12 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
-// acesAP0 curve
 struct AcesCurve {};
 
-// acesAP0cc curve
 struct AcesccCurve {
     float lin_cut;
     float log_cut;
@@ -17,7 +13,6 @@ struct AcesccCurve {
     float toe;
 };
 
-// acesAP0cct curve
 struct AcescctCurve {
     float x_brk;
     float y_brk;
@@ -32,9 +27,9 @@ AcesCurve_lin_aces(struct AcesCurve cv, float lin)
 }
 
 __DEVICE__ float
-AcesCurve_aces_lin(struct AcesCurve cv, float val)
+AcesCurve_aces_lin(struct AcesCurve cv, float value)
 {
-    return val;
+    return value;
 }
 
 __DEVICE__ float
@@ -46,20 +41,18 @@ AcesccCurve_lin_acescc(struct AcesccCurve cv, float lin)
     else if (lin < cv.lin_cut) {
         return (log2_f(cv.toe + lin * 0.5f) + cv.offset) / cv.scale;
     }
-    else {
-        return (log2_f(lin) + cv.offset) / cv.scale;
-    }
+
+    return (log2_f(lin) + cv.offset) / cv.scale;
 }
 
 __DEVICE__ float
-AcesccCurve_acescc_lin(struct AcesccCurve cv, float log)
+AcesccCurve_acescc_lin(struct AcesccCurve cv, float value)
 {
-    if (log < cv.log_cut) {
-        return (exp2_f(log * cv.scale - cv.offset) - cv.toe) * 2.0f;
+    if (value < cv.log_cut) {
+        return (exp2_f(value * cv.scale - cv.offset) - cv.toe) * 2.0f;
     }
-    else {
-        return exp2_f(log * cv.scale - cv.offset);
-    }
+
+    return exp2_f(value * cv.scale - cv.offset);
 }
 
 __DEVICE__ float
@@ -68,23 +61,21 @@ AcescctCurve_lin_acescct(struct AcescctCurve cv, float lin)
     if (lin <= cv.x_brk) {
         return cv.a * lin + cv.b;
     }
-    else {
-        return (log2_f(lin) + 9.72f) / 17.52f;
-    }
+
+    return (log2_f(lin) + 9.72f) / 17.52f;
 }
 
 __DEVICE__ float
-AcescctCurve_acescct_lin(struct AcescctCurve cv, float log)
+AcescctCurve_acescct_lin(struct AcescctCurve cv, float value)
 {
-    if (log > cv.y_brk) {
-        return exp2_f(log * 17.52f - 9.72f);
+    if (value > cv.y_brk) {
+        return exp2_f(value * 17.52f - 9.72f);
     }
-    else {
-        return (log - cv.b) / cv.a;
-    }
+
+    return (value - cv.b) / cv.a;
 }
 
-// aces colorspace
+// ACES colorspace
 struct AcesColorspace {
     struct Matrix aces_matrix;
     struct Matrix xyz_matrix;
@@ -97,9 +88,9 @@ AcesColorspace_xyz_aces(struct AcesColorspace cs, float3 xyz)
 }
 
 __DEVICE__ float3
-AcesColorspace_aces_xyz(struct AcesColorspace cs, float3 acesAP0)
+AcesColorspace_aces_xyz(struct AcesColorspace cs, float3 rgb)
 {
-    return mult_matrix(acesAP0, cs.xyz_matrix);
+    return mult_matrix(rgb, cs.xyz_matrix);
 }
 
 __DEVICE__ struct AcesCurve
@@ -137,10 +128,10 @@ __DEVICE__ struct AcesColorspace
 acesAP0_colorspace()
 {
     struct AcesColorspace cs;
+
     // colortool --inputcolorspace AP0 -v
-    // convert xyz to acesAP0 matrix
     cs.aces_matrix.m00 = 1.0498110175f;
-    cs.aces_matrix.m01 = 0.000000000f;
+    cs.aces_matrix.m01 = 0.0000000000f;
     cs.aces_matrix.m02 = -0.0000974845f;
     cs.aces_matrix.m03 = -0.4959030231f;
     cs.aces_matrix.m04 = 1.3733130458f;
@@ -148,7 +139,7 @@ acesAP0_colorspace()
     cs.aces_matrix.m06 = 0.0000000000f;
     cs.aces_matrix.m07 = 0.0000000000f;
     cs.aces_matrix.m08 = 0.9912520182f;
-    // convert acesAP0 to xyz matrix
+
     cs.xyz_matrix.m00 = 0.9525523959f;
     cs.xyz_matrix.m01 = 0.0000000000f;
     cs.xyz_matrix.m02 = 0.0000936786f;
@@ -158,6 +149,7 @@ acesAP0_colorspace()
     cs.xyz_matrix.m06 = 0.0000000000f;
     cs.xyz_matrix.m07 = 0.0000000000f;
     cs.xyz_matrix.m08 = 1.0088251844f;
+
     return cs;
 }
 
@@ -172,8 +164,8 @@ __DEVICE__ struct AcesColorspace
 acesAP1_colorspace()
 {
     struct AcesColorspace cs;
+
     // colortool --inputcolorspace AP1 -v
-    // convert xyz to acesAP1 matrix
     cs.aces_matrix.m00 = 1.641023f;
     cs.aces_matrix.m01 = -0.324803f;
     cs.aces_matrix.m02 = -0.236425f;
@@ -182,8 +174,8 @@ acesAP1_colorspace()
     cs.aces_matrix.m05 = 0.016756f;
     cs.aces_matrix.m06 = 0.011722f;
     cs.aces_matrix.m07 = -0.008284f;
-    cs.aces_matrix.m08 = 0.98839f;
-    // convert acesAP1 to xyz matrix
+    cs.aces_matrix.m08 = 0.988390f;
+
     cs.xyz_matrix.m00 = 0.662454f;
     cs.xyz_matrix.m01 = 0.134004f;
     cs.xyz_matrix.m02 = 0.156188f;
@@ -193,6 +185,7 @@ acesAP1_colorspace()
     cs.xyz_matrix.m06 = -0.005575f;
     cs.xyz_matrix.m07 = 0.004061f;
     cs.xyz_matrix.m08 = 1.010339f;
+
     return cs;
 }
 
@@ -203,7 +196,7 @@ acesAP1_y_lum_coeff()
     return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
 }
 
-// convert linear to aces
+// linear -> ACES
 __DEVICE__ float3
 lin_aces(float3 rgb)
 {
@@ -211,7 +204,7 @@ lin_aces(float3 rgb)
     return make_float3(AcesCurve_lin_aces(cv, rgb.x), AcesCurve_lin_aces(cv, rgb.y), AcesCurve_lin_aces(cv, rgb.z));
 }
 
-// convert aces to linear
+// ACES -> linear
 __DEVICE__ float3
 aces_lin(float3 rgb)
 {
@@ -219,7 +212,7 @@ aces_lin(float3 rgb)
     return make_float3(AcesCurve_aces_lin(cv, rgb.x), AcesCurve_aces_lin(cv, rgb.y), AcesCurve_aces_lin(cv, rgb.z));
 }
 
-// convert linear to acescc
+// linear -> ACEScc
 __DEVICE__ float3
 lin_acescc(float3 rgb)
 {
@@ -228,7 +221,7 @@ lin_acescc(float3 rgb)
                        AcesccCurve_lin_acescc(cv, rgb.z));
 }
 
-// convert acescc to linear
+// ACEScc -> linear
 __DEVICE__ float3
 acescc_lin(float3 rgb)
 {
@@ -237,7 +230,7 @@ acescc_lin(float3 rgb)
                        AcesccCurve_acescc_lin(cv, rgb.z));
 }
 
-// convert linear to acescct
+// linear -> ACEScct
 __DEVICE__ float3
 lin_acescct(float3 rgb)
 {
@@ -246,7 +239,7 @@ lin_acescct(float3 rgb)
                        AcescctCurve_lin_acescct(cv, rgb.z));
 }
 
-// convert acescct to linear
+// ACEScct -> linear
 __DEVICE__ float3
 acescct_lin(float3 rgb)
 {
@@ -255,16 +248,15 @@ acescct_lin(float3 rgb)
                        AcescctCurve_acescct_lin(cv, rgb.z));
 }
 
-// convert xyz to acesAP0
+// XYZ -> ACES AP0
 __DEVICE__ float3
-xyz_acesAP0(float3 rgb)
+xyz_acesAP0(float3 xyz)
 {
     struct AcesColorspace cs = acesAP0_colorspace();
-    float3 acesAP0 = AcesColorspace_xyz_aces(cs, rgb);
-    return acesAP0;
+    return AcesColorspace_xyz_aces(cs, xyz);
 }
 
-// convert acesAP0 to xyz
+// ACES AP0 -> XYZ
 __DEVICE__ float3
 acesAP0_xyz(float3 rgb)
 {
@@ -272,16 +264,15 @@ acesAP0_xyz(float3 rgb)
     return AcesColorspace_aces_xyz(cs, rgb);
 }
 
-// convert xyz to acesAP1
+// XYZ -> ACES AP1
 __DEVICE__ float3
-xyz_acesAP1(float3 rgb)
+xyz_acesAP1(float3 xyz)
 {
     struct AcesColorspace cs = acesAP1_colorspace();
-    float3 acesAP1 = AcesColorspace_xyz_aces(cs, rgb);
-    return acesAP1;
+    return AcesColorspace_xyz_aces(cs, xyz);
 }
 
-// convert acesAP1 to xyz
+// ACES AP1 -> XYZ
 __DEVICE__ float3
 acesAP1_xyz(float3 rgb)
 {

@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 
-// clang-format on
-
-// gen5 curve
+// Gen5 transfer curve
 struct Gen5Curve {
     float a;
     float b;
@@ -32,16 +30,16 @@ gen5_curve()
 __DEVICE__ float
 Gen5Curve_lin_gen5(struct Gen5Curve cv, float lin)
 {
-    return ((lin >= cv.lin_cut) ? cv.a * log_f(lin + cv.b) + cv.c : cv.d * lin + cv.e);
+    return lin >= cv.lin_cut ? cv.a * log_f(lin + cv.b) + cv.c : cv.d * lin + cv.e;
 }
 
 __DEVICE__ float
-Gen5Curve_gen5_lin(struct Gen5Curve cv, float log)
+Gen5Curve_gen5_lin(struct Gen5Curve cv, float value)
 {
-    return ((log >= cv.log_cut) ? exp_f((log - cv.c) / cv.a) - cv.b : (log - cv.e) / cv.d);
+    return value >= cv.log_cut ? exp_f((value - cv.c) / cv.a) - cv.b : (value - cv.e) / cv.d;
 }
 
-// gen5 colorspace
+// Gen5 colorspace
 struct Gen5Colorspace {
     struct Matrix gen5_matrix;
     struct Matrix xyz_matrix;
@@ -52,18 +50,19 @@ Gen5Colorspace_xyz_gen5(struct Gen5Colorspace cs, float3 xyz)
 {
     return mult_matrix(xyz, cs.gen5_matrix);
 }
+
 __DEVICE__ float3
-Gen5Colorspace_gen5_xyz(struct Gen5Colorspace cs, float3 gen5)
+Gen5Colorspace_gen5_xyz(struct Gen5Colorspace cs, float3 rgb)
 {
-    return mult_matrix(gen5, cs.xyz_matrix);
+    return mult_matrix(rgb, cs.xyz_matrix);
 }
 
 __DEVICE__ struct Gen5Colorspace
 gen5_colorspace()
 {
     struct Gen5Colorspace cs;
+
     // colortool --inputcolorspace GEN5 -v
-    // convert xyz to gen5 matrix
     cs.gen5_matrix.m00 = 1.866382f;
     cs.gen5_matrix.m01 = -0.518397f;
     cs.gen5_matrix.m02 = -0.234610f;
@@ -73,7 +72,7 @@ gen5_colorspace()
     cs.gen5_matrix.m06 = 0.002452f;
     cs.gen5_matrix.m07 = 0.086400f;
     cs.gen5_matrix.m08 = 0.836943f;
-    // convert gen5 to xyz matrix
+
     cs.xyz_matrix.m00 = 0.606530f;
     cs.xyz_matrix.m01 = 0.220408f;
     cs.xyz_matrix.m02 = 0.123479f;
@@ -83,6 +82,7 @@ gen5_colorspace()
     cs.xyz_matrix.m06 = -0.029442f;
     cs.xyz_matrix.m07 = -0.086611f;
     cs.xyz_matrix.m08 = 1.204861f;
+
     return cs;
 }
 
@@ -93,7 +93,7 @@ gen5_y_lum_coeff()
     return make_float3(cs.xyz_matrix.m03, cs.xyz_matrix.m04, cs.xyz_matrix.m05);
 }
 
-// convert linear to gen5
+// linear -> Gen5
 __DEVICE__ float3
 lin_gen5(float3 rgb)
 {
@@ -101,7 +101,7 @@ lin_gen5(float3 rgb)
     return make_float3(Gen5Curve_lin_gen5(cv, rgb.x), Gen5Curve_lin_gen5(cv, rgb.y), Gen5Curve_lin_gen5(cv, rgb.z));
 }
 
-// convert gen5 to linear
+// Gen5 -> linear
 __DEVICE__ float3
 gen5_lin(float3 rgb)
 {
@@ -109,15 +109,15 @@ gen5_lin(float3 rgb)
     return make_float3(Gen5Curve_gen5_lin(cv, rgb.x), Gen5Curve_gen5_lin(cv, rgb.y), Gen5Curve_gen5_lin(cv, rgb.z));
 }
 
-// convert xyz to gen5
+// XYZ -> Gen5
 __DEVICE__ float3
-xyz_gen5(float3 rgb)
+xyz_gen5(float3 xyz)
 {
     struct Gen5Colorspace cs = gen5_colorspace();
-    return Gen5Colorspace_xyz_gen5(cs, rgb);
+    return Gen5Colorspace_xyz_gen5(cs, xyz);
 }
 
-// convert gen5 to xyz
+// Gen5 -> XYZ
 __DEVICE__ float3
 gen5_xyz(float3 rgb)
 {

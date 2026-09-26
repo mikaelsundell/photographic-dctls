@@ -1,11 +1,11 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
-// Cineon exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
+//
+// Cineon exposure from photographic stops with zone-based false color.
 
 // clang-format off
-DEFINE_UI_PARAMS(exposure, Exposure, DCTLUI_SLIDER_FLOAT, 0.0, -8.0, 8.0, 0.1)
+DEFINE_UI_PARAMS(exposure, Exposure, DCTLUI_SLIDER_FLOAT, 0.0f, -8.0f, 8.0f, 0.1f)
 DEFINE_UI_PARAMS(ev, Exposure EV, DCTLUI_COMBO_BOX, 3, {EV_3, EV_2, EV_1, EV0, EV1, EV2, EV3}, {EV -3, EV -2, EV -1, EV 0, EV 1, EV 2, EV 3})
 DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 DEFINE_UI_PARAMS(showcolors, Show colors, DCTLUI_CHECK_BOX, 0)
@@ -21,49 +21,60 @@ struct CineonExposureParams
     int ev;
 };
 
-// ev stops
-__DEVICE__ float evstops(int ev) {
+__DEVICE__ float
+cineonexposure_ev_stops(int ev)
+{
     if (ev == EV_3) {
         return -3.0f;
-    } else if (ev == EV_2) {
+    }
+    else if (ev == EV_2) {
         return -2.0f;
-    } else if (ev == EV_1) {
+    }
+    else if (ev == EV_1) {
         return -1.0f;
-    } else if (ev == EV0) {
+    }
+    else if (ev == EV0) {
         return 0.0f;
-    } else if (ev == EV1) {
+    }
+    else if (ev == EV1) {
         return 1.0f;
-    } else if (ev == EV2) {
+    }
+    else if (ev == EV2) {
         return 2.0f;
-    } else if (ev == EV3) {
+    }
+    else if (ev == EV3) {
         return 3.0f;
     }
-    return 0.0;
+
+    return 0.0f;
 }
 
-// cineon color
-__DEVICE__ float3 cineon_color(float3 input_rgb, struct CineonExposureParams params) {
+__DEVICE__ float3
+cineonexposure_color(float3 rgb, struct CineonExposureParams params)
+{
     struct CineonCurve cv = cineon_curve();
-    float evs = evstops(params.ev);
+    float evs = cineonexposure_ev_stops(params.ev);
     struct CineonColor colors[cineon_stops];
-    for (unsigned long i = 0; i < cineon_stops; i++) {
+
+    // Build Cineon thresholds around 18% gray.
+    for (int i = 0; i < cineon_stops; i++) {
         colors[i] = cineon_colors[i];
         float lin = pow_f(2.0f, colors[i].stop + evs + 0.5f) * 0.18f;
-        float3 log = min_f3(CineonCurve_lin_cineon(cv, make_float3(lin, lin, lin)), 1.0f);
-        colors[i].stop = log.x;
+        float3 log_rgb = min_f3(CineonCurve_lin_cineon(cv, make_float3(lin, lin, lin)), 1.0f);
+        colors[i].stop = log_rgb.x;
     }
-    float3 result = make_float3(0.0f, 0.0f, 0.0f);
-    float lum = luma_rec709(input_rgb);
-    for (unsigned long i = 0; i < cineon_stops; i++) {
-        if (lum <= colors[i].stop || i == (sizeof(cineon_colors) / sizeof(struct CineonColor)) - 1) {
-            result = make_float3(colors[i].r, colors[i].g, colors[i].b);
-            break;
+
+    float lum = luma_rec709(rgb);
+
+    for (int i = 0; i < cineon_stops; i++) {
+        if (lum <= colors[i].stop || i == cineon_stops - 1) {
+            return make_float3(colors[i].r, colors[i].g, colors[i].b);
         }
     }
-    return result; 
+
+    return make_float3(0.0f, 0.0f, 0.0f);
 }
 
-// transform
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
@@ -72,27 +83,37 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.exposure = exposure;
     params.ev = ev;
 
+    // Exposure in linear light.
     rgb = max_f3(lin_cineon(cineon_lin(rgb) * pow_f(2.0f, params.exposure)), 0.0f);
+
     if (showcolors > 0) {
-        rgb = cineon_color(rgb, params);
+        rgb = cineonexposure_color(rgb, params);
     }
+
     if (showlegend > 0) {
-        int legendwidth = p_Width * 0.8;
-        int offset = p_Height * 0.02;
-        int barheight = p_Height * 0.05;
+        int legendwidth = (int)((float)p_Width * 0.8f);
+        int offset = (int)((float)p_Height * 0.02f);
+        int barheight = (int)((float)p_Height * 0.05f);
         int startY = p_Height - barheight - offset;
-        int startX = p_Width * 0.1;
+        int startX = (int)((float)p_Width * 0.1f);
         int endX = startX + legendwidth;
+
         if (p_Y >= startY && p_Y < startY + barheight && p_X >= startX && p_X < endX) {
             int width = legendwidth / cineon_stops;
-            int index = (p_X - startX) / width;
-            if (index >= 0 && index < cineon_stops) {
-                return make_float3(cineon_colors[index].r, cineon_colors[index].g, cineon_colors[index].b);
+
+            if (width > 0) {
+                int index = (p_X - startX) / width;
+
+                if (index >= 0 && index < cineon_stops) {
+                    return make_float3(cineon_colors[index].r, cineon_colors[index].g, cineon_colors[index].b);
+                }
             }
         }
     }
+
     if (adjustdisplay) {
         rgb = adjust_display(rgb);
     }
+
     return rgb;
 }

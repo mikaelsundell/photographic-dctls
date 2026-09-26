@@ -1,10 +1,8 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
-// Visualize selected RGB color space as CIE XYZ or packed CIE Lab volume.
-// Input is decoded to linear, converted to XYZ, optionally whitepoint-adapted
-// to D65, and optionally packed as Lab for display/export.
+//
+// Visualize a selected RGB colorspace as CIE XYZ or packed CIE Lab.
 
 // clang-format off
 DEFINE_UI_PARAMS(colorspace, Colorspace, DCTLUI_COMBO_BOX, 6, {XYZ, ACESAP0, ACESAP1, AWGC3, AWGC4, DWG, REC709, REC2020, SRGB, DCIP3D60, DCIP3, DCIP3D65, GEN5}, {CIE XYZ, AcesAP0 D60, AcesAP1 D60, ARRI AWG3 D65, ARRI AWG4 D65, DaVinci Wide Gamut D65, Rec709 D65, Rec2020 D65, sRGB D65, DCI-P3 'D60 sim' D60, DCI-P3 Theatrical D63, DCI-P3 D65, Blackmagic Gen5 D65})
@@ -37,9 +35,11 @@ struct ColorVolumeParams
 };
 
 __DEVICE__ float3
-gamma_to_lin(float3 rgb, struct ColorVolumeParams params)
+colorvolume_gamma_to_lin(float3 rgb, struct ColorVolumeParams params)
 {
     switch (params.gamma) {
+    case LIN:
+        break;
     case ACESCC:
         rgb = acescc_lin(rgb);
         break;
@@ -74,13 +74,16 @@ gamma_to_lin(float3 rgb, struct ColorVolumeParams params)
         rgb = gen5_lin(rgb);
         break;
     }
+
     return rgb;
 }
 
 __DEVICE__ float3
-colorspace_to_xyz(float3 rgb, struct ColorVolumeParams params)
+colorvolume_colorspace_to_xyz(float3 rgb, struct ColorVolumeParams params)
 {
     switch (params.colorspace) {
+    case XYZ:
+        break;
     case ACESAP0:
         rgb = acesAP0_xyz(rgb);
         break;
@@ -118,11 +121,12 @@ colorspace_to_xyz(float3 rgb, struct ColorVolumeParams params)
         rgb = gen5_xyz(rgb);
         break;
     }
+
     return rgb;
 }
 
 __DEVICE__ float3
-adapt_whitepoint(float3 xyz, struct ColorVolumeParams params)
+colorvolume_adapt_whitepoint(float3 xyz, struct ColorVolumeParams params)
 {
     switch (params.whitepoint) {
     case WPD60D65:
@@ -131,7 +135,11 @@ adapt_whitepoint(float3 xyz, struct ColorVolumeParams params)
     case WPD63D65:
         xyz = d63_d65_adaptation(xyz);
         break;
+    case WPNONE:
+    default:
+        break;
     }
+
     return xyz;
 }
 
@@ -145,14 +153,15 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.whitepoint = whitepoint;
     params.ei = ei;
 
-    rgb = gamma_to_lin(rgb, params);
+    rgb = colorvolume_gamma_to_lin(rgb, params);
 
-    float3 xyz = colorspace_to_xyz(rgb, params);
-    xyz = adapt_whitepoint(xyz, params);
+    float3 xyz = colorvolume_colorspace_to_xyz(rgb, params);
+    xyz = colorvolume_adapt_whitepoint(xyz, params);
 
     float3 result = xyz;
 
     if (labtransform) {
+        // Lab conversion expects D65 XYZ.
         float3 lab = xyz_lab_d65(xyz);
         result = pack_lab_to_rgb(lab);
     }

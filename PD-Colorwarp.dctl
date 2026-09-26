@@ -1,60 +1,60 @@
 // Copyright 2022-present Contributors to the photographic-dctl project.
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
-
+//
 // Procedural RGB color cube warp using tetrahedral interpolation.
 
 // clang-format off
-DEFINE_UI_PARAMS(red_hue,     Red Hue,     DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(red_sat,     Red Sat,     DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(red_lum,     Red Lum,     DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(red_r,       Red R,       DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(red_g,       Red G,       DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(red_b,       Red B,       DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
+DEFINE_UI_PARAMS(red_hue,     Red Hue,     DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(red_sat,     Red Sat,     DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(red_lum,     Red Lum,     DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(red_r,       Red R,       DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(red_g,       Red G,       DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(red_b,       Red B,       DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
 
-DEFINE_UI_PARAMS(yellow_hue,  Yellow Hue,  DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(yellow_sat,  Yellow Sat,  DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(yellow_lum,  Yellow Lum,  DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(yellow_r,    Yellow R,    DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(yellow_g,    Yellow G,    DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(yellow_b,    Yellow B,    DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
+DEFINE_UI_PARAMS(yellow_hue,  Yellow Hue,  DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(yellow_sat,  Yellow Sat,  DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(yellow_lum,  Yellow Lum,  DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(yellow_r,    Yellow R,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(yellow_g,    Yellow G,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(yellow_b,    Yellow B,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
 
-DEFINE_UI_PARAMS(green_hue,   Green Hue,   DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(green_sat,   Green Sat,   DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(green_lum,   Green Lum,   DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(green_r,     Green R,     DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(green_g,     Green G,     DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(green_b,     Green B,     DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
+DEFINE_UI_PARAMS(green_hue,   Green Hue,   DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(green_sat,   Green Sat,   DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(green_lum,   Green Lum,   DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(green_r,     Green R,     DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(green_g,     Green G,     DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(green_b,     Green B,     DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
 
-DEFINE_UI_PARAMS(cyan_hue,    Cyan Hue,    DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(cyan_sat,    Cyan Sat,    DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(cyan_lum,    Cyan Lum,    DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(cyan_r,      Cyan R,      DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(cyan_g,      Cyan G,      DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(cyan_b,      Cyan B,      DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
+DEFINE_UI_PARAMS(cyan_hue,    Cyan Hue,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(cyan_sat,    Cyan Sat,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(cyan_lum,    Cyan Lum,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(cyan_r,      Cyan R,      DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(cyan_g,      Cyan G,      DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(cyan_b,      Cyan B,      DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
 
-DEFINE_UI_PARAMS(blue_hue,    Blue Hue,    DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(blue_sat,    Blue Sat,    DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(blue_lum,    Blue Lum,    DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(blue_r,      Blue R,      DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(blue_g,      Blue G,      DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(blue_b,      Blue B,      DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
+DEFINE_UI_PARAMS(blue_hue,    Blue Hue,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(blue_sat,    Blue Sat,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(blue_lum,    Blue Lum,    DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(blue_r,      Blue R,      DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(blue_g,      Blue G,      DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(blue_b,      Blue B,      DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
 
-DEFINE_UI_PARAMS(magenta_hue, Magenta Hue, DCTLUI_SLIDER_FLOAT, 0.0, -0.25, 0.25, 0.001)
-DEFINE_UI_PARAMS(magenta_sat, Magenta Sat, DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(magenta_lum, Magenta Lum, DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(magenta_r,   Magenta R,   DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(magenta_g,   Magenta G,   DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
-DEFINE_UI_PARAMS(magenta_b,   Magenta B,   DCTLUI_SLIDER_FLOAT, 0.0, -0.50, 0.50, 0.001)
+DEFINE_UI_PARAMS(magenta_hue, Magenta Hue, DCTLUI_SLIDER_FLOAT, 0.0f, -0.25f, 0.25f, 0.001f)
+DEFINE_UI_PARAMS(magenta_sat, Magenta Sat, DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(magenta_lum, Magenta Lum, DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(magenta_r,   Magenta R,   DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(magenta_g,   Magenta G,   DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
+DEFINE_UI_PARAMS(magenta_b,   Magenta B,   DCTLUI_SLIDER_FLOAT, 0.0f, -0.50f, 0.50f, 0.001f)
 
-DEFINE_UI_PARAMS(mask_width,      Mask Width,      DCTLUI_SLIDER_FLOAT, 4.0, 0.5, 8.0, 0.1)
-DEFINE_UI_PARAMS(region_strength, Region Strength, DCTLUI_SLIDER_FLOAT, 2.0, 0.0, 4.0, 0.1)
-DEFINE_UI_PARAMS(mix,             Mix,             DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 1.0, 0.001)
+DEFINE_UI_PARAMS(mask_width,      Mask Width,      DCTLUI_SLIDER_FLOAT, 4.0f, 0.5f, 8.0f, 0.1f)
+DEFINE_UI_PARAMS(region_strength, Region Strength, DCTLUI_SLIDER_FLOAT, 2.0f, 0.0f, 4.0f, 0.1f)
+DEFINE_UI_PARAMS(mix,             Mix,             DCTLUI_SLIDER_FLOAT, 1.0f, 0.0f, 1.0f, 0.001f)
 
 // clang-format on
 #include "PD-Common.h"
 
-#define CUBE_SIZE 5
+#define COLORWARP_CUBE_SIZE 5
 
 struct ColorWarpParams
 {
@@ -105,30 +105,23 @@ struct ColorWarpParams
 };
 
 __DEVICE__ int
-clamp_i(int value, int minv, int maxv)
+colorwarp_clamp_i(int value, int minv, int maxv)
 {
     return value < minv ? minv : (value > maxv ? maxv : value);
 }
 
 __DEVICE__ float3
-adjust_region(
-    float3 color,
-    float hue,
-    float sat,
-    float lum,
-    float red,
-    float green,
-    float blue)
+colorwarp_adjust_region(float3 color, float hue, float sat, float lum, float red, float green, float blue)
 {
     float3 hsl = rgb_hsl(clamp_f3(color, 0.0f, 1.0f));
 
-    hsl.x += hue * 360.0f;
+    // Hue wraps around the color wheel.
+    hsl.x = mod_f(hsl.x + hue * 360.0f + 360.0f, 360.0f);
     hsl.y = clamp_f(hsl.y * (1.0f + sat), 0.0f, 1.0f);
     hsl.z = clamp_f(hsl.z + lum, 0.0f, 1.0f);
 
     float3 adjusted = hsl_rgb(hsl);
 
-    // Direct RGB displacement of the cube control point.
     adjusted.x += red;
     adjusted.y += green;
     adjusted.z += blue;
@@ -137,183 +130,134 @@ adjust_region(
 }
 
 __DEVICE__ float
-hue_region_mask(float3 p, int region, float maskWidth)
+colorwarp_hue_region_mask(float3 p, int region, float mask_width)
 {
     float r = p.x;
     float g = p.y;
     float b = p.z;
-
     float m = 0.0f;
 
     if (region == 0) {
-        m = r - max_f(g, b);        // Red
+        m = r - max_f(g, b);
     }
     else if (region == 1) {
-        m = min_f(r, g) - b;        // Yellow
+        m = min_f(r, g) - b;
     }
     else if (region == 2) {
-        m = g - max_f(r, b);        // Green
+        m = g - max_f(r, b);
     }
     else if (region == 3) {
-        m = min_f(g, b) - r;        // Cyan
+        m = min_f(g, b) - r;
     }
     else if (region == 4) {
-        m = b - max_f(r, g);        // Blue
+        m = b - max_f(r, g);
     }
     else if (region == 5) {
-        m = min_f(r, b) - g;        // Magenta
+        m = min_f(r, b) - g;
     }
 
-    m = clamp_f(m * maskWidth, 0.0f, 1.0f);
-
+    m = clamp_f(m * mask_width, 0.0f, 1.0f);
     return m * m * (3.0f - 2.0f * m);
 }
 
 __DEVICE__ float3
-cube_control_point(
-    int r,
-    int g,
-    int b,
-    struct ColorWarpParams params)
+colorwarp_cube_control_point(int r, int g, int b, struct ColorWarpParams params)
 {
     float3 p = make_float3(
-        (float)r / (float)(CUBE_SIZE - 1),
-        (float)g / (float)(CUBE_SIZE - 1),
-        (float)b / (float)(CUBE_SIZE - 1));
+        (float)r / (float)(COLORWARP_CUBE_SIZE - 1),
+        (float)g / (float)(COLORWARP_CUBE_SIZE - 1),
+        (float)b / (float)(COLORWARP_CUBE_SIZE - 1));
 
-    float redMask =
-        hue_region_mask(p, 0, params.mask_width);
+    float red_mask = colorwarp_hue_region_mask(p, 0, params.mask_width);
+    float yellow_mask = colorwarp_hue_region_mask(p, 1, params.mask_width);
+    float green_mask = colorwarp_hue_region_mask(p, 2, params.mask_width);
+    float cyan_mask = colorwarp_hue_region_mask(p, 3, params.mask_width);
+    float blue_mask = colorwarp_hue_region_mask(p, 4, params.mask_width);
+    float magenta_mask = colorwarp_hue_region_mask(p, 5, params.mask_width);
 
-    float yellowMask =
-        hue_region_mask(p, 1, params.mask_width);
+    float total_mask = red_mask + yellow_mask + green_mask + cyan_mask + blue_mask + magenta_mask;
 
-    float greenMask =
-        hue_region_mask(p, 2, params.mask_width);
-
-    float cyanMask =
-        hue_region_mask(p, 3, params.mask_width);
-
-    float blueMask =
-        hue_region_mask(p, 4, params.mask_width);
-
-    float magentaMask =
-        hue_region_mask(p, 5, params.mask_width);
-
-    float totalMask =
-        redMask +
-        yellowMask +
-        greenMask +
-        cyanMask +
-        blueMask +
-        magentaMask;
-
-    if (totalMask <= 0.0f) {
+    if (total_mask <= 0.0f) {
         return p;
     }
 
-    float3 adjusted =
-        make_float3(0.0f, 0.0f, 0.0f);
+    float3 adjusted = make_float3(0.0f, 0.0f, 0.0f);
 
-    adjusted +=
-        adjust_region(
-            p,
-            params.red_hue,
-            params.red_sat,
-            params.red_lum,
-            params.red_r,
-            params.red_g,
-            params.red_b)
-        * redMask;
+    adjusted += colorwarp_adjust_region(
+        p,
+        params.red_hue,
+        params.red_sat,
+        params.red_lum,
+        params.red_r,
+        params.red_g,
+        params.red_b) * red_mask;
 
-    adjusted +=
-        adjust_region(
-            p,
-            params.yellow_hue,
-            params.yellow_sat,
-            params.yellow_lum,
-            params.yellow_r,
-            params.yellow_g,
-            params.yellow_b)
-        * yellowMask;
+    adjusted += colorwarp_adjust_region(
+        p,
+        params.yellow_hue,
+        params.yellow_sat,
+        params.yellow_lum,
+        params.yellow_r,
+        params.yellow_g,
+        params.yellow_b) * yellow_mask;
 
-    adjusted +=
-        adjust_region(
-            p,
-            params.green_hue,
-            params.green_sat,
-            params.green_lum,
-            params.green_r,
-            params.green_g,
-            params.green_b)
-        * greenMask;
+    adjusted += colorwarp_adjust_region(
+        p,
+        params.green_hue,
+        params.green_sat,
+        params.green_lum,
+        params.green_r,
+        params.green_g,
+        params.green_b) * green_mask;
 
-    adjusted +=
-        adjust_region(
-            p,
-            params.cyan_hue,
-            params.cyan_sat,
-            params.cyan_lum,
-            params.cyan_r,
-            params.cyan_g,
-            params.cyan_b)
-        * cyanMask;
+    adjusted += colorwarp_adjust_region(
+        p,
+        params.cyan_hue,
+        params.cyan_sat,
+        params.cyan_lum,
+        params.cyan_r,
+        params.cyan_g,
+        params.cyan_b) * cyan_mask;
 
-    adjusted +=
-        adjust_region(
-            p,
-            params.blue_hue,
-            params.blue_sat,
-            params.blue_lum,
-            params.blue_r,
-            params.blue_g,
-            params.blue_b)
-        * blueMask;
+    adjusted += colorwarp_adjust_region(
+        p,
+        params.blue_hue,
+        params.blue_sat,
+        params.blue_lum,
+        params.blue_r,
+        params.blue_g,
+        params.blue_b) * blue_mask;
 
-    adjusted +=
-        adjust_region(
-            p,
-            params.magenta_hue,
-            params.magenta_sat,
-            params.magenta_lum,
-            params.magenta_r,
-            params.magenta_g,
-            params.magenta_b)
-        * magentaMask;
+    adjusted += colorwarp_adjust_region(
+        p,
+        params.magenta_hue,
+        params.magenta_sat,
+        params.magenta_lum,
+        params.magenta_r,
+        params.magenta_g,
+        params.magenta_b) * magenta_mask;
 
-    adjusted /= totalMask;
+    adjusted /= total_mask;
 
-    float regionStrength =
-        clamp_f(
-            totalMask * params.region_strength,
-            0.0f,
-            1.0f);
-
-    return clamp_f3(
-        mix_f3(
-            p,
-            adjusted,
-            regionStrength),
-        0.0f,
-        1.0f);
+    float region_strength = clamp_f(total_mask * params.region_strength, 0.0f, 1.0f);
+    return clamp_f3(mix_f3(p, adjusted, region_strength), 0.0f, 1.0f);
 }
 
 __DEVICE__ float3
-tetra_interp(
-    float3 rgb,
-    struct ColorWarpParams params)
+colorwarp_tetra_interp(float3 rgb, struct ColorWarpParams params)
 {
     rgb = clamp_f3(rgb, 0.0f, 1.0f);
 
-    float3 p =
-        rgb * (float)(CUBE_SIZE - 1);
+    float3 p = rgb * (float)(COLORWARP_CUBE_SIZE - 1);
 
-    int r0 = (int)_floor(p.x);
-    int g0 = (int)_floor(p.y);
-    int b0 = (int)_floor(p.z);
+    // p is non-negative, so integer truncation is equivalent to floor.
+    int r0 = (int)p.x;
+    int g0 = (int)p.y;
+    int b0 = (int)p.z;
 
-    r0 = clamp_i(r0, 0, CUBE_SIZE - 2);
-    g0 = clamp_i(g0, 0, CUBE_SIZE - 2);
-    b0 = clamp_i(b0, 0, CUBE_SIZE - 2);
+    r0 = colorwarp_clamp_i(r0, 0, COLORWARP_CUBE_SIZE - 2);
+    g0 = colorwarp_clamp_i(g0, 0, COLORWARP_CUBE_SIZE - 2);
+    b0 = colorwarp_clamp_i(b0, 0, COLORWARP_CUBE_SIZE - 2);
 
     int r1 = r0 + 1;
     int g1 = g0 + 1;
@@ -323,92 +267,48 @@ tetra_interp(
     float fg = p.y - (float)g0;
     float fb = p.z - (float)b0;
 
-    float3 c000 =
-        cube_control_point(r0, g0, b0, params);
+    float3 c000 = colorwarp_cube_control_point(r0, g0, b0, params);
+    float3 c100 = colorwarp_cube_control_point(r1, g0, b0, params);
+    float3 c010 = colorwarp_cube_control_point(r0, g1, b0, params);
+    float3 c001 = colorwarp_cube_control_point(r0, g0, b1, params);
+    float3 c110 = colorwarp_cube_control_point(r1, g1, b0, params);
+    float3 c101 = colorwarp_cube_control_point(r1, g0, b1, params);
+    float3 c011 = colorwarp_cube_control_point(r0, g1, b1, params);
+    float3 c111 = colorwarp_cube_control_point(r1, g1, b1, params);
 
-    float3 c100 =
-        cube_control_point(r1, g0, b0, params);
-
-    float3 c010 =
-        cube_control_point(r0, g1, b0, params);
-
-    float3 c001 =
-        cube_control_point(r0, g0, b1, params);
-
-    float3 c110 =
-        cube_control_point(r1, g1, b0, params);
-
-    float3 c101 =
-        cube_control_point(r1, g0, b1, params);
-
-    float3 c011 =
-        cube_control_point(r0, g1, b1, params);
-
-    float3 c111 =
-        cube_control_point(r1, g1, b1, params);
-
-    float3 out;
+    float3 result;
 
     if (fr >= fg) {
         if (fg >= fb) {
-            out =
-                c000
-                + fr * (c100 - c000)
-                + fg * (c110 - c100)
-                + fb * (c111 - c110);
+            result = c000 + fr * (c100 - c000) + fg * (c110 - c100) + fb * (c111 - c110);
         }
         else if (fr >= fb) {
-            out =
-                c000
-                + fr * (c100 - c000)
-                + fb * (c101 - c100)
-                + fg * (c111 - c101);
+            result = c000 + fr * (c100 - c000) + fb * (c101 - c100) + fg * (c111 - c101);
         }
         else {
-            out =
-                c000
-                + fb * (c001 - c000)
-                + fr * (c101 - c001)
-                + fg * (c111 - c101);
+            result = c000 + fb * (c001 - c000) + fr * (c101 - c001) + fg * (c111 - c101);
         }
     }
     else {
         if (fr >= fb) {
-            out =
-                c000
-                + fg * (c010 - c000)
-                + fr * (c110 - c010)
-                + fb * (c111 - c110);
+            result = c000 + fg * (c010 - c000) + fr * (c110 - c010) + fb * (c111 - c110);
         }
         else if (fg >= fb) {
-            out =
-                c000
-                + fg * (c010 - c000)
-                + fb * (c011 - c010)
-                + fr * (c111 - c011);
+            result = c000 + fg * (c010 - c000) + fb * (c011 - c010) + fr * (c111 - c011);
         }
         else {
-            out =
-                c000
-                + fb * (c001 - c000)
-                + fg * (c011 - c001)
-                + fr * (c111 - c011);
+            result = c000 + fb * (c001 - c000) + fg * (c011 - c001) + fr * (c111 - c011);
         }
     }
 
-    return clamp_f3(out, 0.0f, 1.0f);
+    return clamp_f3(result, 0.0f, 1.0f);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
-    float3 rgb =
-        make_float3(
-            p_R,
-            p_G,
-            p_B);
+    float3 rgb = make_float3(p_R, p_G, p_B);
 
     struct ColorWarpParams params;
-
     params.red_hue = red_hue;
     params.red_sat = red_sat;
     params.red_lum = red_lum;
@@ -454,16 +354,6 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.mask_width = mask_width;
     params.region_strength = region_strength;
 
-    float3 warped =
-        tetra_interp(
-            rgb,
-            params);
-
-    float3 result =
-        mix_f3(
-            rgb,
-            warped,
-            mix);
-
-    return result;
+    float3 warped = colorwarp_tetra_interp(rgb, params);
+    return mix_f3(rgb, warped, mix);
 }
