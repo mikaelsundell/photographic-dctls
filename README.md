@@ -1,6 +1,6 @@
 # Photographic DCTLs #
 
-[![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg?style=flat-square)](https://github.com/mikaelsundell/icloud-snapshot/blob/master/license.md)
+[![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg?style=flat-square)](https://github.com/mikaelsundell/photographic-dctls/blob/master/license.md)
 
 - [Photographic DCTLs](#photographic-dctls)
   - [Introduction](#introduction)
@@ -61,6 +61,15 @@ The repository also serves as a testbench for future production tools. Experimen
 
 | Date       | Description |
 |------------|-------------|
+| 2026-09-26 | Improved portability across Metal, CUDA, and OpenCL, including Intel Arc/OpenCL compatibility |
+|            | Standardized single-precision floating-point literals throughout DCTLs and shared headers |
+|            | Standardized use of `PD-Common.h` math wrappers for cross-backend compatibility |
+|            | Added OpenCL-safe casts and removed backend-specific syntax where required |
+|            | Improved math-domain handling while preserving valid negative values |
+|            | Namespaced DCTL-local helper functions to avoid collisions |
+|            | Improved shared color space and transfer-function headers |
+|            | Improved tone curve, gamut compression, printer lights, exposure, Cineon, and vignette handling |
+|            | Improved DCTL parser compatibility and explicit `float3` transform results |
 | 2026-08-20 | Added generic `PD-Gamma.h` transfer function library |
 |            | Added `PD-Apple.h` with Apple Log support |
 |            | Refactored Rec.709 into the new `PD-Rec.h` library |
@@ -80,7 +89,7 @@ The repository also serves as a testbench for future production tools. Experimen
 |            | Added PD-GamutCompress.dctl |
 |            | Added PD-VideoRange.dctl |
 |            | Improved PD-Saturation now uses luma axis and color spaces |
-|            | Fixed OUTFILM5 in PD-Transform, prevously used colorspace instead of gamma |
+|            | Fixed OUTFILM5 in PD-Transform, previously used colorspace instead of gamma |
 | 2025-08-19 | PD-Tonemap: Improved reinhard, now luma preserving |
 | 2025-08-16 | Fixed typos in comments for color space matrices |
 | 2025-08-05 | PD-Transform: Added support for YCbCr conversion |
@@ -92,7 +101,7 @@ The repository also serves as a testbench for future production tools. Experimen
 Installation and utils
 ---------
 
-To use these tools into your DaVinci Resolve setup, begin by cloning the git repository or download the release package, which contains the DCTLs and headers.
+To use these tools in your DaVinci Resolve setup, begin by cloning the git repository or download the release package, which contains the DCTLs and headers.
 
 Run `python(.exe) run.py install` in your terminal to copy the `*.dctl` and `*.h` files to the DaVinci Resolve LUT DCTL folder, ensuring they're accessible within your Resolve environment. The files can also be manually copied to `/Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/DCTL` on Mac and `C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\LUT\DCTL`on Windows.
 
@@ -115,16 +124,16 @@ __For exploring DCTL examples:__
 __To access the DaVinci Resolve log file and initiate a trace:__
 
 ```shell
-./run.py install
+./run.py log
 ```
 
 __To install *.dctl and *.h into DCTL directory:__
 
 ```shell
-./run.py log
+./run.py install
 ```
 
-__To make a snapshot of hte DaVinvi Resolve DCTL folder:__
+__To make a snapshot of the DaVinci Resolve DCTL folder:__
 
 ```shell
 ./run.py snapshot
@@ -138,7 +147,7 @@ __To make a snapshot of hte DaVinvi Resolve DCTL folder:__
 
 ### Compatibility
 
-All DCTLs are tested and confirmed to work with Metal, CUDA, and OpenCL on both Mac and Windows platforms.
+The DCTLs are designed for cross-backend compatibility with Metal, CUDA, and OpenCL on Mac and Windows. The code uses single-precision math, shared math wrappers, and OpenCL-safe syntax where required. Backend and GPU-driver differences may still exist, so results should be validated on the target system.
 
 ## DCTLs
 
@@ -148,7 +157,7 @@ All DCTLs are tested and confirmed to work with Metal, CUDA, and OpenCL on both 
 
 Cineon exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Exposure.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Cineon-Exposure.dctl
 
 ![PD-Cineon-Exposure figure](resources/PD-Cineon-Exposure.png "PD-Cineon-Exposure.dctl")
 
@@ -156,7 +165,7 @@ Cineon exposure from photographic stops, incorporating a zone based false color 
 
 Cineon negative inversion with precise control over the dmin ratio based inversion process using adjustable parameters such as density, bit depth, offset, and density scale. You can specify dmin base values manually as floating-point numbers (obtained from tools like Pixel Analyzer in Nuke or similar software) or sample them using a rectangular sampler from the border or other dmin base areas.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Cineon-Invert.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Cineon-Invert.dctl
 
 ![PD-Cineon-Invert.dctl figure](resources/PD-Cineon-Invert.png "PD-Cineon-Invert.dctl")
 
@@ -164,9 +173,9 @@ Cineon negative inversion with precise control over the dmin ratio based inversi
 
 #### PD-LogC-Exposure
 
-LogC3 exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
+LogC3 and LogC4 exposure from photographic stops, incorporating a zone based false color to aid in achieving correct exposure levels.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC-Exposure.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC-Exposure.dctl
 
 ![PD-LogC3-Exposure.dctl figure](resources/PD-LogC3-Exposure.png "PD-LogC3-Exposure.dctl")
 
@@ -176,19 +185,19 @@ LogC3 exposure from photographic stops, incorporating a zone based false color t
 
 Made for print emulation, this DCTL applies DaVinci Resolve's built-in film looks to ARRI LogC3 and Cineon footage with adjustable controls for luminosity and color blending.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC-Print.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC-Print.dctl
 
 #### PD-LogC3-FilmMatrix
 
 The film style matrix makes the color characteristics of the Log C image similar to negative film scanned on an ARRISCAN.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC3-FilmMatrix.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC3-FilmMatrix.dctl
 
 #### PD-LogC-PrinterLights
 
 Printer light controls for LogC3 and LogC4, applying cyan, magenta, yellow, and master point adjustments as exposure changes in linear light.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-LogC-PrinterLights.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC-PrinterLights.dctl
 
 ### Utility DCTLs
 
@@ -196,7 +205,7 @@ Printer light controls for LogC3 and LogC4, applying cyan, magenta, yellow, and 
 
 Visualize selected RGB color space as CIE XYZ or packed CIE Lab volume. Input is decoded to linear, converted to XYZ, optionally whitepoint-adapted, and optionally packed as Lab for display/export.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Colorcube.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Colorcube.dctl
 
 The included `logctool_colorcube.exr` can be used as a reference input for validating the color cube DCTL. It contains a structured RGB cube image that makes it easier to inspect color space conversion, XYZ mapping, Lab packing, gamut shape, and clipping behavior.
 
@@ -206,49 +215,49 @@ The included `logctool_colorcube.exr` can be used as a reference input for valid
 
 Procedural RGB color cube warp using tetrahedral interpolation.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Colorwarp.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Colorwarp.dctl
 
 #### PD-GamutCompress
 
 Luma-axis gamut compression with selectable color space coefficients.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-GamutCompress.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-GamutCompress.dctl
 
 #### PD-Grade
 
-Grade adjustments, this DCTL is experimental code for lift, gamma, gain and log controls.
+Experimental grading controls for black and white point, lift, gain, multiply, offset, and gamma adjustments.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Grade.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Grade.dctl
 
 #### PD-Matrix
 
 Matrix adjustments, a utility for copying matrix values.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Matrix.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Matrix.dctl
 
 #### PD-Saturation
 
 Luma-axis saturation test with selectable color space coefficients.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Saturation.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Saturation.dctl
 
 #### PD-Stripify
 
 Matrix adjustments, this DCTL simplifies the color palette by pushing colors into a warm and cool strip.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Stripify.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Stripify.dctl
 
 #### PD-Tonecurve
 
 Anchored tone curve with black and white point controls, gamma-aware midgray, channel exposure, contrast, adjustable toe and shoulder shaping, and mid-gray smoothing for a more natural transition between the lower and upper curve regions.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Tonecurve.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Tonecurve.dctl
 
 #### PD-Vignette
 
 Lens-based vignette for natural edge falloff. The effect is applied as a spatial exposure adjustment in linear light, with controls for amount, radius, softness, optical center, aspect, and rotation. Multiple lens-style variations can be used for natural, classic, anamorphic, or more mechanical falloff.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Vignette.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Vignette.dctl
 
 #### PD-Transform
 
@@ -300,13 +309,13 @@ Color space transformations to and from CIE XYZ linear, tone compression, displa
 | **Display Contrast**       | Gamma 2.6 → Rec709, sRGB → Rec709, Rec709 → sRGB, Rec709 → Gamma 2.6 |
 | **Exposure Index (EI)**    | For LogC3: EI 160 – EI 1600                                |
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-Transform.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Transform.dctl
 
 #### PD-VideoRange
 
 Convert between legal/video range and full/data range.
 
-- https://github.com/mikaelsundell/dctl/blob/master/PD-VideoRange.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-VideoRange.dctl
 
 ## Reference charts
 
@@ -379,8 +388,8 @@ References
  Web Resources
 -------------
 
-* GitHub page:        https://github.com/mikaelsundell/dctl
-* Issues              https://github.com/mikaelsundell/dctl/issues
+* GitHub page:        https://github.com/mikaelsundell/photographic-dctls
+* Issues              https://github.com/mikaelsundell/photographic-dctls/issues
 
 ## License
 

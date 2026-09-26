@@ -218,12 +218,6 @@ acos_f(float value)
     return _acosf(value);
 }
 
-__DEVICE__ float
-atan_f(float value)
-{
-    return _atanf(value);
-}
-
 // matrix math
 __DEVICE__ float3
 mult_matrix(float3 value, struct Matrix mat)

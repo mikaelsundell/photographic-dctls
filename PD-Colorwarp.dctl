@@ -355,5 +355,6 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.region_strength = region_strength;
 
     float3 warped = colorwarp_tetra_interp(rgb, params);
-    return mix_f3(rgb, warped, mix);
+    float3 result = mix_f3(rgb, warped, mix);
+    return result;
 }
