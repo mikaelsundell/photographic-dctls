@@ -1,0 +1,103 @@
+// Copyright 2022-present Contributors to the photographic-dctl project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/mikaelsundell/photographic-dctls
+//
+// Color analysis using the vectorscope skin-tone I-line.
+
+// clang-format off
+DEFINE_UI_PARAMS(skintolerance, Skin Tolerance, DCTLUI_SLIDER_FLOAT, 10.0f, 0.1f, 30.0f, 0.1f)
+DEFINE_UI_PARAMS(skinminchroma, Skin Min Chroma, DCTLUI_SLIDER_FLOAT, 0.02f, 0.0f, 0.25f, 0.005f)
+DEFINE_UI_PARAMS(skinmaxchroma, Skin Max Chroma, DCTLUI_SLIDER_FLOAT, 0.35f, 0.05f, 0.75f, 0.005f)
+DEFINE_UI_PARAMS(skinminluma, Skin Min Luma, DCTLUI_SLIDER_FLOAT, 0.10f, 0.0f, 1.0f, 0.01f)
+DEFINE_UI_PARAMS(skinmaxluma, Skin Max Luma, DCTLUI_SLIDER_FLOAT, 0.95f, 0.0f, 1.0f, 0.01f)
+
+// clang-format on
+#include "PD-Common.h"
+#include "PD-Rec.h"
+
+struct ColorAnalyseParams
+{
+    float skintolerance;
+    float skinminchroma;
+    float skinmaxchroma;
+    float skinminluma;
+    float skinmaxluma;
+};
+
+__DEVICE__ float3 coloranalyse_scope(float3 rgb)
+{
+    // Treat incoming RGB numerically as Rec.709 R'G'B' for scope analysis.
+    float3 ycbcr = rgb709_ycbcr(rgb);
+
+    float y = ycbcr.x;
+    float cb = ycbcr.y - 0.5f;
+    float cr = ycbcr.z - 0.5f;
+
+    return make_float3(y, cb, cr);
+}
+
+__DEVICE__ float coloranalyse_scope_chroma(float3 scope)
+{
+    return hypot_f(scope.y, scope.z);
+}
+
+__DEVICE__ float3 coloranalyse_skin_i_vector()
+{
+    // Positive YIQ I-axis expressed in the reference vectorscope UV plane.
+    return make_float3(-0.54464f, 0.83867f, 0.0f);
+}
+
+__DEVICE__ float coloranalyse_skin_i_delta(float3 scope)
+{
+    float3 i = coloranalyse_skin_i_vector();
+
+    float pixelAngle = atan2_f(scope.z, scope.y);
+    float iAngle = atan2_f(i.y, i.x);
+    float delta = pixelAngle - iAngle;
+
+    if (delta > PD_PI) {
+        delta -= PD_TWO_PI;
+    }
+    else if (delta < -PD_PI) {
+        delta += PD_TWO_PI;
+    }
+
+    return delta * PD_RAD_TO_DEG;
+}
+
+__DEVICE__ int coloranalyse_skin_candidate(float3 scope, struct ColorAnalyseParams params)
+{
+    float chroma = coloranalyse_scope_chroma(scope);
+
+    return scope.x >= params.skinminluma
+        && scope.x <= params.skinmaxluma
+        && chroma >= params.skinminchroma
+        && chroma <= params.skinmaxchroma;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    float3 rgb = make_float3(p_R, p_G, p_B);
+
+    struct ColorAnalyseParams params;
+    params.skintolerance = skintolerance;
+    params.skinminchroma = skinminchroma;
+    params.skinmaxchroma = skinmaxchroma;
+    params.skinminluma = skinminluma;
+    params.skinmaxluma = skinmaxluma;
+
+    float3 scope = coloranalyse_scope(rgb);
+    float delta = abs_f(coloranalyse_skin_i_delta(scope));
+
+    int skin = coloranalyse_skin_candidate(scope, params)
+        && delta <= params.skintolerance;
+
+    float3 gray = make_float3(scope.x, scope.x, scope.x);
+    float3 result = gray;
+
+    if (skin) {
+        result = rgb;
+    }
+
+    return result;
+}

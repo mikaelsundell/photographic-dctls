@@ -15,6 +15,11 @@ struct Matrix {
 };
 
 // math
+#define PD_PI 3.141592654f
+#define PD_TWO_PI 6.283185307f
+#define PD_DEG_TO_RAD 0.01745329252f
+#define PD_RAD_TO_DEG 57.29577951f
+
 __DEVICE__ float
 exp_f(float value)
 {

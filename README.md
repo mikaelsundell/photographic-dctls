@@ -16,23 +16,24 @@
     - [LogC3 and LogC4 DCTLs](#logc3-and-logc4-dctls)
       - [PD-LogC-Exposure](#pd-logc-exposure)
       - [PD-LogC-Print](#pd-logc-print)
-      - [PD-LogC3-FilmMatrix](#pd-logc3-filmmatrix)
-      - [PD-LogC-PrinterLights](#pd-logc-printerlights)
+      - [PD-LogC3-Film-Matrix](#pd-logc3-film-matrix)
+      - [PD-LogC-Printer-Lights](#pd-logc-printer-lights)
     - [Utility DCTLs](#utility-dctls)
-      - [PD-Colorcube](#pd-colorcube)
-      - [PD-Colorwarp](#pd-colorwarp)
-      - [PD-GamutCompress](#pd-gamutcompress)
+      - [PD-Color-Analyse](#pd-color-analyse)
+      - [PD-Color-Cube](#pd-color-cube)
+      - [PD-Color-Warp](#pd-color-warp)
+      - [PD-Gamut-Compress](#pd-gamut-compress)
       - [PD-Grade](#pd-grade)
       - [PD-Matrix](#pd-matrix)
       - [PD-Saturation](#pd-saturation)
       - [PD-Stripify](#pd-stripify)
-      - [PD-Tonecurve](#pd-tonecurve)
+      - [PD-Tone-Curve](#pd-tone-curve)
       - [PD-Vignette](#pd-vignette)
       - [PD-Transform](#pd-transform)
         - [Supported color spaces](#supported-color-spaces)
         - [Supported gamma encodings](#supported-gamma-encodings)
         - [Additional features](#additional-features)
-      - [PD-VideoRange](#pd-videorange)
+      - [PD-Video-Range](#pd-video-range)
   - [Reference charts](#reference-charts)
       - [ACES Macbeth 50D 5203 EXR from rawtoaces](#aces-macbeth-50d-5203-exr-from-rawtoaces)
       - [LogC3 stepchart - EXR 2K LogC3 encoding](#logc3-stepchart---exr-2k-logc3-encoding)
@@ -61,6 +62,9 @@ The repository also serves as a testbench for future production tools. Experimen
 
 | Date       | Description |
 |------------|-------------|
+| 2026-10-05 | Added `PD-Color-Analyse` for Rec.709 vectorscope-based skin-line analysis |
+|            | Added shared angle constants/helpers to `PD-Common.h` |
+|            | Standardized multi-word DCTL filenames using hyphen-separated naming |
 | 2026-09-26 | Improved portability across Metal, CUDA, and OpenCL, including Intel Arc/OpenCL compatibility |
 |            | Standardized single-precision floating-point literals throughout DCTLs and shared headers |
 |            | Standardized use of `PD-Common.h` math wrappers for cross-backend compatibility |
@@ -75,25 +79,25 @@ The repository also serves as a testbench for future production tools. Experimen
 |            | Refactored Rec.709 into the new `PD-Rec.h` library |
 |            | Replaced OOTF display mapping with dedicated tone contrast transforms and experimental comments |
 |            | Fixed D65 whitepoint adaptation for Lab output only |
-|            | Fixed color space selection in `PD-GamutCompress` luma coefficients |
+|            | Fixed color space selection in `PD-Gamut-Compress` luma coefficients |
 |            | Added consistent use of floating-point literals across the codebase |
 |            | Improved use of ACES curve constants |
-|            | Redesigned `PD-Tonecurve` with anchored black/white points, gamma-aware midgray, channel exposure controls, and improved toe/shoulder shaping |
-|            | Added mid-gray smoothing to `PD-Tonecurve` |
+|            | Redesigned `PD-Tone-Curve` with anchored black/white points, gamma-aware midgray, channel exposure controls, and improved toe/shoulder shaping |
+|            | Added mid-gray smoothing to `PD-Tone-Curve` |
 |            | Added `PD-Vignette` with lens-based falloff |
 |            | Fixed clang-format formatting |
 | 2026-08-07 | Added Apple Log and Rec2020 |
 | 2025-06-05 | Added logctool_colorcube.exr for validating the color cube DCTL |
-|            | Added PD-Colorcube.dctl |
-|            | Added PD-Colorwarp.dctl |
-|            | Added PD-GamutCompress.dctl |
-|            | Added PD-VideoRange.dctl |
+|            | Added PD-Color-Cube.dctl |
+|            | Added PD-Color-Warp.dctl |
+|            | Added PD-Gamut-Compress.dctl |
+|            | Added PD-Video-Range.dctl |
 |            | Improved PD-Saturation now uses luma axis and color spaces |
 |            | Fixed OUTFILM5 in PD-Transform, previously used colorspace instead of gamma |
 | 2025-08-19 | PD-Tonemap: Improved reinhard, now luma preserving |
 | 2025-08-16 | Fixed typos in comments for color space matrices |
 | 2025-08-05 | PD-Transform: Added support for YCbCr conversion |
-| 2025-06-15 | PD-LogC3-FilmMatrix: Added legacy LogC3 film matrix |
+| 2025-06-15 | PD-LogC3-Film-Matrix: Added legacy LogC3 film matrix |
 | 2025-06-15 | PD-Transform: Fixed issue with sRGB in and out |
 | 2025-06-06 | PD-Transform: Added support for DaVinci Wide Gamut |
 | 2025-06-03 | PD-Transform: Fixed an issue with incorrect INGEN5 instead of INFILM5 enum |
@@ -187,41 +191,47 @@ Made for print emulation, this DCTL applies DaVinci Resolve's built-in film look
 
 - https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC-Print.dctl
 
-#### PD-LogC3-FilmMatrix
+#### PD-LogC3-Film-Matrix
 
 The film style matrix makes the color characteristics of the Log C image similar to negative film scanned on an ARRISCAN.
 
-- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC3-FilmMatrix.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC3-Film-Matrix.dctl
 
-#### PD-LogC-PrinterLights
+#### PD-LogC-Printer-Lights
 
 Printer light controls for LogC3 and LogC4, applying cyan, magenta, yellow, and master point adjustments as exposure changes in linear light.
 
-- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC-PrinterLights.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-LogC-Printer-Lights.dctl
 
 ### Utility DCTLs
 
-#### PD-Colorcube
+#### PD-Color-Analyse
+
+Diagnostic skin-tone analysis based on Rec.709 vectorscope chroma coordinates and the YIQ I-axis skin-tone reference. Matching pixels remain in color while non-matching pixels are shown in grayscale, with adjustable skin-line tolerance, chroma, and luma limits. The input RGB values are treated as Rec.709 signal values, so any required color space and transfer-function conversion should be performed before this DCTL.
+
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Color-Analyse.dctl
+
+#### PD-Color-Cube
 
 Visualize selected RGB color space as CIE XYZ or packed CIE Lab volume. Input is decoded to linear, converted to XYZ, optionally whitepoint-adapted, and optionally packed as Lab for display/export.
 
-- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Colorcube.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Color-Cube.dctl
 
 The included `logctool_colorcube.exr` can be used as a reference input for validating the color cube DCTL. It contains a structured RGB cube image that makes it easier to inspect color space conversion, XYZ mapping, Lab packing, gamut shape, and clipping behavior.
 
 - Download: [logctool_colorcube.exr](resources/logctool_colorcube.exr)
 
-#### PD-Colorwarp
+#### PD-Color-Warp
 
 Procedural RGB color cube warp using tetrahedral interpolation.
 
-- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Colorwarp.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Color-Warp.dctl
 
-#### PD-GamutCompress
+#### PD-Gamut-Compress
 
 Luma-axis gamut compression with selectable color space coefficients.
 
-- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-GamutCompress.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Gamut-Compress.dctl
 
 #### PD-Grade
 
@@ -247,11 +257,11 @@ Matrix adjustments, this DCTL simplifies the color palette by pushing colors int
 
 - https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Stripify.dctl
 
-#### PD-Tonecurve
+#### PD-Tone-Curve
 
 Anchored tone curve with black and white point controls, gamma-aware midgray, channel exposure, contrast, adjustable toe and shoulder shaping, and mid-gray smoothing for a more natural transition between the lower and upper curve regions.
 
-- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Tonecurve.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Tone-Curve.dctl
 
 #### PD-Vignette
 
@@ -311,11 +321,11 @@ Color space transformations to and from CIE XYZ linear, tone compression, displa
 
 - https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Transform.dctl
 
-#### PD-VideoRange
+#### PD-Video-Range
 
 Convert between legal/video range and full/data range.
 
-- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-VideoRange.dctl
+- https://github.com/mikaelsundell/photographic-dctls/blob/master/PD-Video-Range.dctl
 
 ## Reference charts
 
