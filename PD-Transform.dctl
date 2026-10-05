@@ -31,7 +31,7 @@ DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 #include "PD-Rec.h"
 #include "PD-sRGB.h"
 #include "PD-Tonemap.h"
-#include "PD-Whitepoint.h"
+#include "PD-White-Point.h"
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {

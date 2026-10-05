@@ -20,11 +20,12 @@ DEFINE_UI_PARAMS(adjustdisplay, Adjust for display, DCTLUI_CHECK_BOX, 0)
 #include "PD-Cineon.h"
 #include "PD-DWG.h"
 #include "PD-DCIP3.h"
+#include "PD-Gamma.h"
 #include "PD-Gen5.h"
 #include "PD-LogC.h"
 #include "PD-Rec.h"
 #include "PD-sRGB.h"
-#include "PD-Whitepoint.h"
+#include "PD-White-Point.h"
 
 struct ColorVolumeParams
 {

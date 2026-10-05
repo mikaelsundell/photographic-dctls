@@ -2,10 +2,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/mikaelsundell/photographic-dctls
 //
-// Color analysis using the vectorscope skin-tone I-line and neutral axis.
+// Color analysis using the vectorscope skin-tone I-line, neutral axis,
+// and display-referred luminance zones.
 
 // clang-format off
-DEFINE_UI_PARAMS(analysis, Analysis, DCTLUI_COMBO_BOX, 0, {SKIN_LINE, NEUTRAL}, {Skin Line, Neutral})
+DEFINE_UI_PARAMS(colorspace, Colorspace, DCTLUI_COMBO_BOX, 0, {CSREC709, CSREC2020}, {Rec709 D65, Rec2020 D65})
+DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_COMBO_BOX, 2, {REC709GAMMA, GAMMA22, GAMMA24, GAMMA26}, {Rec709, Gamma2.2, Gamma2.4, Gamma2.6})
+DEFINE_UI_PARAMS(analysis, Analysis, DCTLUI_COMBO_BOX, 0, {SKIN_LINE, NEUTRAL, LUMINANCE}, {Skin Line, Neutral, Luminance})
 DEFINE_UI_PARAMS(skintolerance, Skin Tolerance, DCTLUI_SLIDER_FLOAT, 10.0f, 0.1f, 30.0f, 0.1f)
 DEFINE_UI_PARAMS(skinminchroma, Skin Min Chroma, DCTLUI_SLIDER_FLOAT, 0.02f, 0.0f, 0.25f, 0.005f)
 DEFINE_UI_PARAMS(skinmaxchroma, Skin Max Chroma, DCTLUI_SLIDER_FLOAT, 0.35f, 0.05f, 0.75f, 0.005f)
@@ -19,8 +22,41 @@ DEFINE_UI_PARAMS(neutralmaxluma, Neutral Max Luma, DCTLUI_SLIDER_FLOAT, 0.95f, 0
 #include "PD-Common.h"
 #include "PD-Rec.h"
 
+// False-color luminance-stop palette, matching PD-LogC-Exposure.
+struct ColorAnalyseStopColor
+{
+    float stop;
+    float r;
+    float g;
+    float b;
+};
+
+__CONSTANT__ struct ColorAnalyseStopColor coloranalyse_stop_colors[] = {
+    { -8.0f, 0.01f, 0.01f, 0.01f },
+    { -7.0f, 0.05f, 0.05f, 0.05f },
+    { -6.0f, 0.10f, 0.10f, 0.10f },
+    { -5.0f, 0.40f, 0.25f, 0.60f },
+    { -4.0f, 0.20f, 0.45f, 0.70f },
+    { -3.0f, 0.40f, 0.60f, 0.95f },
+    { -2.0f, 0.40f, 0.60f, 0.25f },
+    { -1.0f, 0.60f, 0.90f, 0.55f },
+    {  0.0f, 0.50f, 0.50f, 0.50f },
+    {  1.0f, 1.00f, 0.95f, 0.25f },
+    {  2.0f, 0.90f, 0.60f, 0.25f },
+    {  3.0f, 0.90f, 0.50f, 0.25f },
+    {  4.0f, 0.90f, 0.35f, 0.30f },
+    {  5.0f, 0.90f, 0.30f, 0.20f },
+    {  6.0f, 0.90f, 0.90f, 0.90f },
+    {  7.0f, 0.95f, 0.95f, 0.95f },
+    {  8.0f, 0.99f, 0.99f, 0.99f }
+};
+
+#define COLORANALYSE_STOP_COUNT 17
+
 struct ColorAnalyseParams
 {
+    int colorspace;
+    int gamma;
     int analysis;
     float skintolerance;
     float skinminchroma;
@@ -32,14 +68,100 @@ struct ColorAnalyseParams
     float neutralmaxluma;
 };
 
-__DEVICE__ float3 coloranalyse_scope(float3 rgb)
+__DEVICE__ float3 coloranalyse_y_lum_coeff(struct ColorAnalyseParams params)
 {
-    // Treat incoming RGB numerically as Rec.709 R'G'B' for scope analysis.
-    float3 ycbcr = rgb709_ycbcr(rgb);
+    if (params.colorspace == CSREC2020) {
+        return rec2020_y_lum_coeff();
+    }
 
-    float y = ycbcr.x;
-    float cb = ycbcr.y - 0.5f;
-    float cr = ycbcr.z - 0.5f;
+    return rec709_y_lum_coeff();
+}
+
+__DEVICE__ float coloranalyse_gamma_exp(struct ColorAnalyseParams params)
+{
+    if (params.gamma == GAMMA22) {
+        return 2.2f;
+    }
+    if (params.gamma == GAMMA26) {
+        return 2.6f;
+    }
+
+    return 2.4f;
+}
+
+__DEVICE__ float3 coloranalyse_gamma_to_lin(float3 rgb, struct ColorAnalyseParams params)
+{
+    if (params.gamma == REC709GAMMA) {
+        return rec709_lin(rgb);
+    }
+
+    float gammaexp = coloranalyse_gamma_exp(params);
+    return make_float3(pow_f(max_f(rgb.x, 0.0f), gammaexp),
+                       pow_f(max_f(rgb.y, 0.0f), gammaexp),
+                       pow_f(max_f(rgb.z, 0.0f), gammaexp));
+}
+
+__DEVICE__ float3 coloranalyse_lin_to_gamma(float3 rgb, struct ColorAnalyseParams params)
+{
+    if (params.gamma == REC709GAMMA) {
+        return lin_rec709(rgb);
+    }
+
+    float invexp = 1.0f / coloranalyse_gamma_exp(params);
+    return make_float3(pow_f(max_f(rgb.x, 0.0f), invexp),
+                       pow_f(max_f(rgb.y, 0.0f), invexp),
+                       pow_f(max_f(rgb.z, 0.0f), invexp));
+}
+
+__DEVICE__ float3 coloranalyse_to_xyz(float3 lin, struct ColorAnalyseParams params)
+{
+    if (params.colorspace == CSREC2020) {
+        return rec2020_xyz(lin);
+    }
+
+    return rec709_xyz(lin);
+}
+
+__DEVICE__ float3 coloranalyse_from_xyz(float3 xyz, struct ColorAnalyseParams params)
+{
+    if (params.colorspace == CSREC2020) {
+        return xyz_rec2020(xyz);
+    }
+
+    return xyz_rec709(xyz);
+}
+
+__DEVICE__ float3 coloranalyse_scope_rgb(float3 rgb, struct ColorAnalyseParams params)
+{
+    // Resolve the incoming signal colorimetrically before vectorscope analysis:
+    // encoded RGB -> linear RGB -> XYZ -> selected Rec RGB -> encoded RGB.
+    // The XYZ round-trip makes the selected Rec.709/Rec.2020 primaries an
+    // explicit part of the scope path rather than treating RGB as generic.
+    float3 lin = coloranalyse_gamma_to_lin(rgb, params);
+    float3 xyz = coloranalyse_to_xyz(lin, params);
+    float3 scope_lin = coloranalyse_from_xyz(xyz, params);
+
+    scope_lin = make_float3(max_f(scope_lin.x, 0.0f),
+                            max_f(scope_lin.y, 0.0f),
+                            max_f(scope_lin.z, 0.0f));
+
+    return coloranalyse_lin_to_gamma(scope_lin, params);
+}
+
+__DEVICE__ float3 coloranalyse_scope(float3 rgb, struct ColorAnalyseParams params)
+{
+    // A video vectorscope is a chroma representation of the encoded R'G'B'
+    // signal. Derive Y', Cb and Cr from the selected Rec gamut. This changes
+    // both luminance weighting and chroma geometry between Rec.709 and Rec.2020.
+    float3 scope_rgb = coloranalyse_scope_rgb(rgb, params);
+    float3 coeff = coloranalyse_y_lum_coeff(params);
+    float kr = coeff.x;
+    float kg = coeff.y;
+    float kb = coeff.z;
+
+    float y = kr * scope_rgb.x + kg * scope_rgb.y + kb * scope_rgb.z;
+    float cb = (scope_rgb.z - y) / (2.0f * (1.0f - kb));
+    float cr = (scope_rgb.x - y) / (2.0f * (1.0f - kr));
 
     return make_float3(y, cb, cr);
 }
@@ -51,7 +173,8 @@ __DEVICE__ float coloranalyse_scope_chroma(float3 scope)
 
 __DEVICE__ float3 coloranalyse_skin_i_vector()
 {
-    // Positive YIQ I-axis expressed in the reference vectorscope UV plane.
+    // Fixed vectorscope skin-tone I-line. Resolve keeps this reference angle
+    // unchanged when the scope gamut changes between Rec.709 and Rec.2020.
     return make_float3(-0.54464f, 0.83867f, 0.0f);
 }
 
@@ -92,11 +215,43 @@ __DEVICE__ int coloranalyse_neutral_candidate(float3 scope, struct ColorAnalyseP
         && chroma <= params.neutraltolerance;
 }
 
+__DEVICE__ float coloranalyse_luminance(float3 rgb, struct ColorAnalyseParams params)
+{
+    // Decode the selected transfer function to linear display light, then use
+    // the Y row from the selected Rec RGB->XYZ matrix as luminance coefficients.
+    float3 lin = coloranalyse_gamma_to_lin(rgb, params);
+    float3 coeff = coloranalyse_y_lum_coeff(params);
+
+    return coeff.x * lin.x + coeff.y * lin.y + coeff.z * lin.z;
+}
+
+__DEVICE__ float3 coloranalyse_luminance_stop_color(float3 rgb, struct ColorAnalyseParams params)
+{
+    const float middlegray = 0.18f;
+    float lum = coloranalyse_luminance(rgb, params);
+
+    // Use the same one-stop-wide zones as PD-LogC-Exposure: each palette
+    // entry is centered on its integer stop, with the boundary at +0.5 stop.
+    for (int i = 0; i < COLORANALYSE_STOP_COUNT; i++) {
+        float threshold = middlegray * pow_f(2.0f, coloranalyse_stop_colors[i].stop + 0.5f);
+
+        if (lum <= threshold || i == COLORANALYSE_STOP_COUNT - 1) {
+            return make_float3(coloranalyse_stop_colors[i].r,
+                               coloranalyse_stop_colors[i].g,
+                               coloranalyse_stop_colors[i].b);
+        }
+    }
+
+    return make_float3(0.0f, 0.0f, 0.0f);
+}
+
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
     float3 rgb = make_float3(p_R, p_G, p_B);
 
     struct ColorAnalyseParams params;
+    params.colorspace = colorspace;
+    params.gamma = gamma;
     params.analysis = analysis;
     params.skintolerance = skintolerance;
     params.skinminchroma = skinminchroma;
@@ -107,10 +262,12 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
     params.neutralminluma = neutralminluma;
     params.neutralmaxluma = neutralmaxluma;
 
-    float3 scope = coloranalyse_scope(rgb);
+    float3 scope = coloranalyse_scope(rgb, params);
     float3 result;
 
     if (params.analysis == SKIN_LINE) {
+        // Skin uses the selected Rec.709/Rec.2020 vectorscope coordinates,
+        // but compares them against the same fixed I-line angle.
         float delta = abs_f(coloranalyse_skin_i_delta(scope));
 
         int match = coloranalyse_skin_candidate(scope, params)
@@ -119,13 +276,16 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
         float3 gray = make_float3(scope.x, scope.x, scope.x);
         result = match ? rgb : gray;
     }
-    else {
+    else if (params.analysis == NEUTRAL) {
         int match = coloranalyse_neutral_candidate(scope, params);
 
         float3 gray = make_float3(0.18f, 0.18f, 0.18f);
         float3 green = make_float3(0.0f, 1.0f, 0.0f);
 
         result = match ? green : gray;
+    }
+    else {
+        result = coloranalyse_luminance_stop_color(rgb, params);
     }
 
     return result;
